@@ -1,10 +1,10 @@
-// Hotspot overlays: a thin connector line from each glowing dot to a real,
+// Hotspot overlays: a thin connector line from each coral hotspot dot to a real,
 // accessible DOM label (drei <Html>). Hover on desktop, auto-cycle on touch,
-// all labels shown when reduced-motion. Lives in the same (rotating) group as
-// the dots so lines/labels track their anchors.
+// all labels shown when reduced-motion. Shares the palm's (rotating) space so
+// lines/labels track their anchors. Per-hotspot labelOffset tidies placement.
 import { useMemo } from 'react';
 import { Line, Html } from '@react-three/drei';
-import { buildFronds, resolveAnchor } from './layout';
+import { buildPalm } from './layout';
 import type { PalmConfig, Vec3 } from './config';
 
 interface HotspotsProps {
@@ -14,25 +14,26 @@ interface HotspotsProps {
   showAll: boolean; // reduced-motion static pose: reveal every label
 }
 
-const LABEL_OFFSET = 0.55;
+const LABEL_OUT = 0.6;
 
-function labelPoint(anchor: Vec3): Vec3 {
+function labelPoint(anchor: Vec3, off?: { dx?: number; dy?: number; out?: number }): Vec3 {
   const [x, y, z] = anchor;
   const len = Math.hypot(x, z) || 1;
-  return [x + (x / len) * LABEL_OFFSET, y + 0.28, z + (z / len) * LABEL_OFFSET];
+  const out = LABEL_OUT + (off?.out ?? 0);
+  return [x + (x / len) * out + (off?.dx ?? 0), y + 0.28 + (off?.dy ?? 0), z + (z / len) * out];
 }
 
 export function Hotspots({ config, activeId, onHover, showAll }: HotspotsProps) {
   const { colors } = config;
-  const fronds = useMemo(() => buildFronds(config.frondCount), [config.frondCount]);
+  const model = useMemo(() => buildPalm(config), [config]);
 
   const items = useMemo(
     () =>
       config.hotspots.map((h) => {
-        const anchor = resolveAnchor(h.anchor, fronds);
-        return { ...h, anchor, label3: labelPoint(anchor) };
+        const anchor = model.anchorsById[h.id];
+        return { ...h, anchor, label3: labelPoint(anchor, h.labelOffset) };
       }),
-    [config.hotspots, fronds],
+    [config.hotspots, model],
   );
 
   return (
@@ -67,7 +68,7 @@ export function Hotspots({ config, activeId, onHover, showAll }: HotspotsProps) 
                   'pointer-events-auto select-none whitespace-nowrap rounded-md',
                   'border border-black/5 bg-white/95 px-2.5 py-1.5 text-left shadow-sm',
                   'shadow-black/5 backdrop-blur-sm transition-opacity duration-200',
-                  'outline-none focus-visible:ring-2 focus-visible:ring-[#5FE3D6]',
+                  'outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B4A]',
                   visible ? 'opacity-100' : 'opacity-0 focus-visible:opacity-100',
                 ].join(' ')}
                 style={{ borderLeft: `2px solid ${colors.connector}` }}

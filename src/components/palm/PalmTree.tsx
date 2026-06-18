@@ -1,44 +1,23 @@
-// The exported procedural palm group: trunk + crown + fronds + the selective
-// glowing hotspot dots. Cleanly exportable for later reuse across the site.
+// The exported procedural palm group — three addressable layers:
+//   FACES  (solid translucent blocks)  → VoxelMesh
+//   EDGES  (glowing wireframe)          → VoxelMesh's <Edges>
+//   POINTS (vertex field + hotspots)    → VertexDots + HotspotDot
+// Cleanly exportable for reuse. The block `order` is the future build-anim hook.
 import { useMemo, type ThreeEvent } from 'react';
 import * as THREE from 'three';
 import { VoxelMesh } from './VoxelMesh';
-import {
-  buildTrunk,
-  buildFronds,
-  CROWN,
-  CROWN_APEX,
-  FROND_GROUP_POSITION,
-  resolveAnchor,
-  type Frond,
-} from './layout';
+import { VertexDots } from './VertexDots';
+import { buildPalm } from './layout';
 import type { PalmConfig, Vec3 } from './config';
 
 interface PalmTreeProps {
   config: PalmConfig;
   activeId: string | null;
   onHover: (id: string | null) => void;
-  /** Higher emissive when selective bloom is on; gentler emissive-only otherwise. */
+  /** Selective bloom on (desktop) → push emissive >1; off → gentler emissive. */
   bloom: boolean;
-}
-
-function Frond({ frond, colors }: { frond: Frond; colors: PalmConfig['colors'] }) {
-  const color = colors.frond[frond.tier];
-  return (
-    <group position={FROND_GROUP_POSITION} rotation={[0, frond.angle, 0]}>
-      {frond.leaflets.map((leaf, k) => (
-        <VoxelMesh
-          key={k}
-          kind="box"
-          args={leaf.size}
-          position={leaf.position}
-          rotation={[0, 0, leaf.rotationZ]}
-          color={color}
-          edgeColor={colors.frondEdge}
-        />
-      ))}
-    </group>
-  );
+  /** Idle pulse of the vertex field (off for reduced-motion). */
+  pulse: boolean;
 }
 
 interface DotProps {
@@ -50,12 +29,12 @@ interface DotProps {
   onHover: (id: string | null) => void;
 }
 
+// Hotspot dots are a DISTINCT subset of the vertex field: coral, larger,
+// brighter, interactive — so the 6 services stay identifiable.
 function HotspotDot({ id, position, color, active, bloom, onHover }: DotProps) {
-  // Emissive lifted >1 with toneMapped=false so selective bloom (threshold 1)
-  // catches it without blowing out the white background.
-  const base = bloom ? 2.2 : 1.05;
-  const intensity = active ? base * 1.7 : base;
-  const scale = active ? 1.6 : 1;
+  const base = bloom ? 2.6 : 1.3;
+  const intensity = active ? base * 1.6 : base;
+  const scale = active ? 1.7 : 1.1;
 
   const over = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
@@ -70,7 +49,7 @@ function HotspotDot({ id, position, color, active, bloom, onHover }: DotProps) {
 
   return (
     <mesh position={position} scale={scale} onPointerOver={over} onPointerOut={out}>
-      <sphereGeometry args={[0.046, 16, 16]} />
+      <sphereGeometry args={[0.055, 16, 16]} />
       <meshStandardMaterial
         color={color}
         emissive={new THREE.Color(color)}
@@ -83,58 +62,38 @@ function HotspotDot({ id, position, color, active, bloom, onHover }: DotProps) {
   );
 }
 
-export function PalmTree({ config, activeId, onHover, bloom }: PalmTreeProps) {
+export function PalmTree({ config, activeId, onHover, bloom, pulse }: PalmTreeProps) {
   const { colors } = config;
-  const trunk = useMemo(() => buildTrunk(), []);
-  const fronds = useMemo(() => buildFronds(config.frondCount), [config.frondCount]);
-
-  const anchors = useMemo(
-    () =>
-      config.hotspots.map((h) => ({
-        id: h.id,
-        position: resolveAnchor(h.anchor, fronds),
-      })),
-    [config.hotspots, fronds],
-  );
+  const model = useMemo(() => buildPalm(config), [config]);
+  const edgeBoost = bloom ? 2.5 : 1.0;
 
   return (
     <group>
-      {/* Trunk — stacked tapered, faceted cylinder segments along a gentle arc. */}
-      {trunk.map((seg, i) => (
+      {/* FACES + glowing EDGES, one block at a time. */}
+      {model.blocks.map((b) => (
         <VoxelMesh
-          key={`t${i}`}
-          kind="cylinder"
-          args={[seg.radiusTop, seg.radiusBottom, seg.height]}
-          position={seg.position}
-          rotation={[0, 0, seg.rotationZ]}
-          color={i / trunk.length > 0.5 ? colors.trunkTop : colors.trunkBottom}
-          edgeColor={colors.trunkEdge}
+          key={b.id}
+          size={b.size}
+          position={b.position}
+          quaternion={b.quaternion}
+          color={b.color}
+          edgeColor={colors.edge}
+          edgeBoost={edgeBoost}
+          opacity={config.faceOpacity}
         />
       ))}
 
-      {/* Crown nut — a small faceted block tying the fronds to the trunk top. */}
-      <VoxelMesh
-        kind="cylinder"
-        args={[0.12, 0.14, 0.22]}
-        position={[CROWN[0], CROWN[1] + 0.05, CROWN[2]]}
-        color={colors.trunkTop}
-        edgeColor={colors.trunkEdge}
-        radialSegments={6}
-      />
+      {/* Full glowing POINT field at every vertex. */}
+      <VertexDots points={model.vertices} color={colors.vertex} bloom={bloom} pulse={pulse} />
 
-      {/* Fronds radiating from the crown. */}
-      {fronds.map((f) => (
-        <Frond key={f.index} frond={f} colors={colors} />
-      ))}
-
-      {/* Selective glowing hotspot dots (the only emissive points). */}
-      {anchors.map((a) => (
+      {/* The 6 hotspot anchors — distinct coral dots, a subset of the field. */}
+      {config.hotspots.map((h) => (
         <HotspotDot
-          key={a.id}
-          id={a.id}
-          position={a.position}
-          color={colors.dot}
-          active={activeId === a.id}
+          key={h.id}
+          id={h.id}
+          position={model.anchorsById[h.id]}
+          color={colors.hotspot}
+          active={activeId === h.id}
           bloom={bloom}
           onHover={onHover}
         />
@@ -142,5 +101,3 @@ export function PalmTree({ config, activeId, onHover, bloom }: PalmTreeProps) {
     </group>
   );
 }
-
-export { CROWN_APEX };

@@ -129,9 +129,9 @@ export default function PalmTreeHero({ config = DEFAULT_CONFIG }: { config?: Pal
         <DemandInvalidate trigger={activeId} />
 
         {/* Soft, layered light — low ambient + soft key + dim fill. */}
-        <ambientLight intensity={0.75} />
-        <directionalLight position={[4, 8, 5]} intensity={1.15} />
-        <directionalLight position={[-5, 3, -3]} intensity={0.28} />
+        <ambientLight intensity={0.55} />
+        <directionalLight position={[4, 8, 5]} intensity={0.7} />
+        <directionalLight position={[-5, 3, -3]} intensity={0.2} />
 
         <IdleRotation enabled={rotate}>
           <PalmTree
@@ -139,6 +139,7 @@ export default function PalmTreeHero({ config = DEFAULT_CONFIG }: { config?: Pal
             activeId={activeId}
             onHover={setActiveId}
             bloom={bloomEnabled}
+            pulse={rotate}
           />
           <Hotspots
             config={config}
@@ -163,7 +164,7 @@ export default function PalmTreeHero({ config = DEFAULT_CONFIG }: { config?: Pal
         {/* Selective bloom: only the >1 emissive dots glow; white stays white. */}
         {bloomEnabled && (
           <EffectComposer>
-            <Bloom luminanceThreshold={1} mipmapBlur intensity={0.85} radius={0.5} />
+            <Bloom luminanceThreshold={1} mipmapBlur intensity={0.9} radius={0.36} />
           </EffectComposer>
         )}
       </Canvas>
