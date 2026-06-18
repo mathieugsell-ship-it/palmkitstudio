@@ -1,7 +1,8 @@
 ---
-// STEP 1 demo page — the ONLY page. Full-viewport, centered on white.
+// Variant B — low-poly triangulated "tech blueprint" palm. Separate page so the
+// voxel version stays untouched. Full-viewport, light background.
 import '../styles/global.css';
-import PalmTreeHero from '../components/palm/PalmTreeHero.tsx';
+import PalmTreeMesh from '../components/palm/PalmTreeMesh.tsx';
 ---
 
 <!doctype html>
@@ -9,17 +10,17 @@ import PalmTreeHero from '../components/palm/PalmTreeHero.tsx';
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Palmkit Studio</title>
-    <meta name="description" content="Palmkit Studio — web, digital & AI studio." />
+    <title>Palmkit Studio — Blueprint</title>
+    <meta name="description" content="Palmkit Studio — triangulated blueprint palm." />
   </head>
   <body>
-    <main class="h-screen w-screen overflow-hidden bg-white">
+    <main class="h-screen w-screen overflow-hidden">
       <!-- Single 3D island; mounted client-only so it never blocks LCP. -->
-      <PalmTreeHero client:only="react" />
+      <PalmTreeMesh client:only="react" />
       <a
-        href="/blueprint"
+        href="/"
         class="fixed bottom-4 right-4 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-600 no-underline backdrop-blur-sm transition-colors hover:text-neutral-900"
-        >Blueprint version →</a
+        >← Voxel version</a
       >
     </main>
     <style is:global>
@@ -27,7 +28,7 @@ import PalmTreeHero from '../components/palm/PalmTreeHero.tsx';
       body {
         margin: 0;
         padding: 0;
-        background: #ffffff;
+        background: #eef2f1;
       }
     </style>
   </body>
