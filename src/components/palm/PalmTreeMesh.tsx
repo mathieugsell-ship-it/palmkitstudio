@@ -12,13 +12,16 @@ import { useMediaQuery, useVisible } from './useViewport';
 // Blueprint palette — greens for the form, deep teal for the nodes. Kept here
 // (not in the voxel config) so Variant B is self-contained.
 const MESH_COLORS: MeshColors = {
-  trunkFill: '#8AA678',
+  trunkFill: '#7E9A66',
   trunkStroke: '#2C4A30',
-  frondFill: '#6FB890',
-  frondStroke: '#1F6643',
+  crownFill: '#4E9A6B',
+  frondFills: ['#5AA877', '#4E9A6B', '#3E7E57'], // varied greens across layers
+  frondStroke: '#1F5C3D',
 };
 const NODE_COLOR = '#15A89A'; // saturated teal — reads on light, unlike #5FE3D6
 const BG = '#EEF2F1'; // very light cool grey
+// Translucent colored faces: clearly green yet see-through (config knob).
+const FACE_OPACITY = 0.62;
 
 // ---- in-canvas helpers -----------------------------------------------------
 function IdleRotation({ enabled, children }: { enabled: boolean; children: React.ReactNode }) {
@@ -46,7 +49,7 @@ function Nodes({ points, pulse }: { points: Vec3[]; pulse: boolean }) {
   });
   return (
     <Instances limit={points.length} range={points.length} frustumCulled={false}>
-      <sphereGeometry args={[0.028, 10, 10]} />
+      <sphereGeometry args={[0.013, 8, 8]} />
       <meshBasicMaterial ref={matRef} color={NODE_COLOR} transparent opacity={0.95} toneMapped={false} />
       {points.map((p, i) => (
         <Instance key={i} position={p} />
@@ -63,7 +66,7 @@ function NoWebGL() {
   );
 }
 
-export default function PalmTreeMesh({ frondCount = 8 }: { frondCount?: number }) {
+export default function PalmTreeMesh({ frondCount = 14 }: { frondCount?: number }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const visible = useVisible(wrapRef);
@@ -82,11 +85,11 @@ export default function PalmTreeMesh({ frondCount = 8 }: { frondCount?: number }
         shadows={false}
         dpr={[1, 2]}
         frameloop={frameloop}
-        camera={{ position: [3.4, 2.4, 5.4], fov: 32 }}
+        camera={{ position: [3.0, 1.9, 4.6], fov: 34 }}
         gl={{ antialias: true, alpha: false }}
         onCreated={({ gl, camera }) => {
           gl.setClearColor(BG, 1);
-          camera.lookAt(0.15, 1.7, 0);
+          camera.lookAt(0.1, 1.5, 0);
         }}
         fallback={<NoWebGL />}
       >
@@ -102,11 +105,11 @@ export default function PalmTreeMesh({ frondCount = 8 }: { frondCount?: number }
                 geometry={part.geometry}
                 simplify={false}
                 stroke={part.stroke}
-                thickness={0.09}
+                thickness={0.04}
                 strokeOpacity={1}
                 backfaceStroke={part.stroke}
                 fill={part.fill}
-                fillOpacity={0.15}
+                fillOpacity={FACE_OPACITY}
                 fillMix={1}
               />
             </group>
