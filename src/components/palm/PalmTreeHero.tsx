@@ -118,11 +118,11 @@ export default function PalmTreeHero({ config = DEFAULT_CONFIG }: { config?: Pal
         shadows={false}
         dpr={[1, 2]}
         frameloop={frameloop}
-        camera={{ position: [4.0, 3.2, 6.4], fov: 34 }}
+        camera={{ position: [3.5, 2.5, 5.7], fov: 34 }}
         gl={{ antialias: true, alpha: false }}
         onCreated={({ gl, camera }) => {
           gl.setClearColor('#FFFFFF', 1);
-          camera.lookAt(0, 2.0, 0); // aim at the palm's mid-height, not the base
+          camera.lookAt(0.1, 1.55, 0); // aim at the palm's mid-height, not the base
         }}
         fallback={<NoWebGL config={config} />}
       >
@@ -164,7 +164,13 @@ export default function PalmTreeHero({ config = DEFAULT_CONFIG }: { config?: Pal
         {/* Selective bloom: only the >1 emissive dots glow; white stays white. */}
         {bloomEnabled && (
           <EffectComposer>
-            <Bloom luminanceThreshold={1} mipmapBlur intensity={0.9} radius={0.36} />
+            <Bloom
+              luminanceThreshold={1.02}
+              luminanceSmoothing={0}
+              mipmapBlur
+              intensity={0.55}
+              radius={0.2}
+            />
           </EffectComposer>
         )}
       </Canvas>

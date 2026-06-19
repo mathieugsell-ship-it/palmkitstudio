@@ -32,11 +32,13 @@ export interface PalmConfig {
 // "High-tech blueprint": sober solid faces, luminous TEAL wireframe + vertex
 // field, CORAL hotspot accents so the 6 services stand out from the vertex set.
 export const COLORS = {
-  // Two frond tiers, varied slightly per layer.
-  frond: ['#4E9A6B', '#3E7E57'] as const,
-  // Two trunk tones, blended bottom→top.
+  // A palette of greens — fronds vary frond-to-frond and block-to-block
+  // (jittered in layout) so the canopy isn't a flat single green.
+  frondGreens: ['#5BA877', '#4E9A6B', '#3E7E57', '#46916A', '#37714E'],
+  // Two trunk tones, blended bottom→top then jittered per block.
   trunkBottom: '#7C5A30',
   trunkTop: '#9A6F3C',
+  coconut: '#6B4A2E',
   // Luminous construction layers.
   edge: '#5FE3D6', // glowing wireframe edges
   vertex: '#5FE3D6', // glowing vertex points (the full field)
@@ -59,8 +61,8 @@ export const HOTSPOTS: HotspotConfig[] = [
 ];
 
 export const DEFAULT_CONFIG: PalmConfig = {
-  frondCount: 8,
+  frondCount: 10,
   colors: COLORS,
   hotspots: HOTSPOTS,
-  faceOpacity: 0.9,
+  faceOpacity: 0.87,
 };

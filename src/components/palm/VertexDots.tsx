@@ -17,18 +17,18 @@ interface VertexDotsProps {
 
 export function VertexDots({ points, color, bloom, pulse }: VertexDotsProps) {
   const matRef = useRef<THREE.MeshStandardMaterial>(null);
-  const base = bloom ? 1.8 : 1.0;
+  const base = bloom ? 1.45 : 1.0;
 
   useFrame((state) => {
     if (!matRef.current) return;
     matRef.current.emissiveIntensity = pulse
-      ? base + Math.sin(state.clock.elapsedTime * 2.2) * 0.5
+      ? base + Math.sin(state.clock.elapsedTime * 2.2) * 0.35
       : base;
   });
 
   return (
     <Instances limit={points.length} range={points.length} frustumCulled={false}>
-      <sphereGeometry args={[0.03, 8, 8]} />
+      <sphereGeometry args={[0.013, 8, 8]} />
       <meshStandardMaterial
         ref={matRef}
         color={color}
