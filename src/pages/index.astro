@@ -1,34 +1,6 @@
 ---
-// STEP 1 demo page — the ONLY page. Full-viewport, centered on white.
-import '../styles/global.css';
-import PalmTreeHero from '../components/palm/PalmTreeHero.tsx';
+// Home page = the versions index, so every iteration is reachable from `/`.
+import VersionsIndex from '../components/VersionsIndex.astro';
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Palmkit Studio</title>
-    <meta name="description" content="Palmkit Studio — web, digital & AI studio." />
-  </head>
-  <body>
-    <main class="h-screen w-screen overflow-hidden bg-white">
-      <!-- Single 3D island; mounted client-only so it never blocks LCP. -->
-      <PalmTreeHero client:only="react" />
-      <a
-        href="/blueprint"
-        class="fixed bottom-4 right-4 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-600 no-underline backdrop-blur-sm transition-colors hover:text-neutral-900"
-        >Blueprint version →</a
-      >
-    </main>
-    <style is:global>
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        background: #ffffff;
-      }
-    </style>
-  </body>
-</html>
+<VersionsIndex />

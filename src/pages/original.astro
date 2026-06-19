@@ -1,0 +1,35 @@
+---
+// Original voxel palm (moved here from `/` when the home page became the
+// versions index). Content unchanged — same component as before.
+import '../styles/global.css';
+import PalmTreeHero from '../components/palm/PalmTreeHero.tsx';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio</title>
+    <meta name="description" content="Palmkit Studio — web, digital & AI studio." />
+  </head>
+  <body>
+    <main class="h-screen w-screen overflow-hidden bg-white">
+      <!-- Single 3D island; mounted client-only so it never blocks LCP. -->
+      <PalmTreeHero client:only="react" />
+      <a
+        href="/"
+        class="fixed bottom-4 right-4 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-600 no-underline backdrop-blur-sm transition-colors hover:text-neutral-900"
+        >← All versions</a
+      >
+    </main>
+    <style is:global>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+    </style>
+  </body>
+</html>
