@@ -35,11 +35,11 @@ export interface BoatModel {
 // AND keeps it roughly tangential to the shore, so the long shaft + bow stay
 // inside the water ring (don't poke past the sea edge). Scaled down so it reads
 // as a discreet detail, not a co-star.
-const CX = -1.2;
+const CX = -0.6;
 const CY = -0.42; // waterline
-const CZ = 1.2;
-const PHI = -0.785; // yaw about Y (radians) — ~tangential to the shore
-const SCALE = 0.82; // overall size (discreet)
+const CZ = 2.6; // clearly in the foreground, open water
+const PHI = 5.88; // yaw about Y (radians) — prow angled toward the viewer
+const SCALE = 1.7; // clearly a longtail (still slimmer/shorter than the island)
 
 const rand = (i: number) => {
   const x = Math.sin(i * 91.7 + 47.3) * 43758.5453;

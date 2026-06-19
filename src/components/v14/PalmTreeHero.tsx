@@ -190,8 +190,10 @@ export default function PalmTreeHero({ config = DEFAULT_CONFIG }: { config?: Pal
 
   // Selective bloom only on capable desktop; emissive-only fallback otherwise.
   const bloomEnabled = !reducedMotion && !noHover;
-  // Rotation runs only when visible and motion is allowed.
-  const rotate = visible && !reducedMotion;
+  // Live motion (ripple + node pulse) runs whenever visible & motion allowed.
+  const motion = visible && !reducedMotion;
+  // Idle scene rotation is gated SEPARATELY by config (paused now; see config).
+  const rotate = motion && config.idleRotation;
   const frameloop: 'always' | 'demand' = reducedMotion || !visible ? 'demand' : 'always';
 
   // Palm "construction" build: plays once on load, THEN the scene eases into
@@ -253,8 +255,8 @@ export default function PalmTreeHero({ config = DEFAULT_CONFIG }: { config?: Pal
           <SceneBuild
             config={config}
             bloom={bloomEnabled}
-            pulse={rotate}
-            animate={rotate}
+            pulse={motion}
+            animate={motion}
             reducedMotion={reducedMotion}
             onBuildComplete={handleBuilt}
           />

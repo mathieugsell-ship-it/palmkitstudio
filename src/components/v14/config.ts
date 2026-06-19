@@ -35,6 +35,9 @@ export interface PalmConfig {
   rippleAmp: number;
   rippleSpeed: number;
   rippleK: number;
+  /** Slow idle Y-rotation of the whole diorama. Off for now (static
+   *  composition) — flip to true to re-enable; ripple/pulse stay independent. */
+  idleRotation: boolean;
   /** Full-scene "construction" build-in (one normalized 0→1 timeline): the
    *  whole island→palm→water world draws itself as glowing wireframe, faces
    *  fill, then a top→bottom sweep crystallizes the edges to thin white. */
@@ -103,13 +106,13 @@ export const COLORS = {
   haloMid: '#FFE3C4', // peach/gold mid of the halo, easing to transparent
   warmKey: '#FFE9D2', // warm key-light colour (raking from the sun side)
 
-  // Voxel LONGTAIL BOAT (v14) — warm teak hull harmonizing with the trunk, with
-  // a tiny authentic red/blue/pale ribbon accent at the prow. DEFAULT = Option A
-  // (warm teak). Swap the hull/trim/engine hexes to try Options B/C (see reply).
-  boatHull: '#8A6A3E', // main wood
-  boatHullDark: '#6E5230', // lower planks / shadowed blocks
-  boatTrim: '#A6814A', // gunwale / deck-rim highlight plank
-  boatEngine: '#463C2E', // engine + shaft + prop (dark, muted)
+  // Voxel LONGTAIL BOAT (v14) — Option B "rich mahogany" hull, with a tiny
+  // authentic red/blue/pale ribbon accent at the prow. (Option A teak / C
+  // driftwood hexes are in the reply if we want to switch back.)
+  boatHull: '#7E4A2E', // main wood (mahogany)
+  boatHullDark: '#5E3520', // lower planks / shadowed blocks
+  boatTrim: '#9A6038', // gunwale / deck-rim highlight plank
+  boatEngine: '#3E342A', // engine + shaft + prop (dark, muted)
   ribbonRed: '#C8453A', // prow ribbon (authentic red)
   ribbonBlue: '#2F6FB0', // prow ribbon (authentic blue)
   ribbonPale: '#EDE3CC', // tiny pale flag at the very tip
@@ -137,6 +140,7 @@ export const DEFAULT_CONFIG: PalmConfig = {
   rippleAmp: 0.06, // subtle bob — blocks stay overlapped, never clip the sand
   rippleSpeed: 0.9, // slow, calm
   rippleK: 1.1, // wavelength of the travelling diagonal wave
+  idleRotation: false, // paused for composition; re-enable later
   build: {
     duration: 3.2,
     // Construction: points 0→0.42, glowing-blue edges 0.10→0.52 (cascade
