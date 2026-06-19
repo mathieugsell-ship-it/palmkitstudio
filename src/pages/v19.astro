@@ -1,0 +1,32 @@
+---
+// Voxel v19 — copied from v18 (solid karst pitons). Only change: the two pitons
+// are pushed deep along the VIEW AXIS (true depth behind the islet, toward the
+// horizon), centred-right rather than off to the right edge, so they read as
+// small distant rocks far in the background but stay fully in frame. Same
+// size/shape/colours/solidity. No interactivity/UI; rotation paused.
+import '../styles/global.css';
+import PalmTreeHero from '../components/v19/PalmTreeHero.tsx';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Voxel v19</title>
+    <meta name="description" content="Palmkit Studio — voxel Andaman scene: solid karst pitons far back on the horizon." />
+  </head>
+  <body>
+    <main class="h-screen w-screen overflow-hidden">
+      <PalmTreeHero client:only="react" />
+      <a
+        href="/versions"
+        class="fixed bottom-4 right-4 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-600 no-underline backdrop-blur-sm transition-colors hover:text-neutral-900"
+        >← All versions</a
+      >
+    </main>
+    <style is:global>
+      html, body { margin: 0; padding: 0; background: #fbfcfd; }
+    </style>
+  </body>
+</html>
