@@ -29,17 +29,18 @@ export interface BoatModel {
   blocks: BoatBlock[];
 }
 
+// ---- size + vertical fit (EXPOSED for fine-tuning) -------------------------
+const SCALE = 2.4; // overall boat size — a confident foreground longtail
+const LIFT = 0.13; // raise above the waterline so the hull sits ON the surface
+//                    (bigger LIFT = floats higher / less draft)
+
 // ---- placement (tunable) ---------------------------------------------------
-// Foreground water off the island's front-left, resting on the water surface
-// (waterline ≈ -0.42, see waterLayout). Yaw turns the long profile to the view
-// AND keeps it roughly tangential to the shore, so the long shaft + bow stay
-// inside the water ring (don't poke past the sea edge). Scaled down so it reads
-// as a discreet detail, not a co-star.
+// Foreground open water off the island's front-left; prow angled toward the
+// viewer. Yaw keeps the long shaft + bow inside the (widened) water ring.
 const CX = -0.6;
-const CY = -0.42; // waterline
+const CY = -0.42; // waterline reference
 const CZ = 2.6; // clearly in the foreground, open water
 const PHI = 5.88; // yaw about Y (radians) — prow angled toward the viewer
-const SCALE = 1.7; // clearly a longtail (still slimmer/shorter than the island)
 
 const rand = (i: number) => {
   const x = Math.sin(i * 91.7 + 47.3) * 43758.5453;
@@ -61,7 +62,7 @@ export function buildBoat(config: PalmConfig): BoatModel {
 
   const place = (x: number, y: number, z: number): Vec3 => {
     const v = new THREE.Vector3(x, y, z).applyQuaternion(yaw);
-    return [v.x + CX, v.y + CY, v.z + CZ];
+    return [v.x + CX, v.y + CY + LIFT, v.z + CZ];
   };
   const qof = (localQ?: THREE.Quaternion): [number, number, number, number] => {
     const q = localQ ? yaw.clone().multiply(localQ) : yaw.clone();

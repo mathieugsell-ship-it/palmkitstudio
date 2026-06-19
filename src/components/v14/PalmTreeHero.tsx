@@ -154,9 +154,9 @@ function CameraRig({ phone, tablet }: { phone: boolean; tablet: boolean }) {
   const camera = useThree((s) => s.camera);
   const invalidate = useThree((s) => s.invalidate);
   useEffect(() => {
-    const f = phone ? 1.5 : tablet ? 1.24 : 1.0; // pull-back factor
+    const f = phone ? 1.75 : tablet ? 1.42 : 1.0; // pull-back (wider sea → more)
     camera.position.set(5.9 * f, 3.9 * f, 9.3 * f);
-    camera.lookAt(0.1, phone ? 0.55 : tablet ? 0.85 : 1.05, 0);
+    camera.lookAt(0.1, phone ? 0.5 : tablet ? 0.8 : 1.05, 0);
     camera.updateProjectionMatrix();
     invalidate();
   }, [phone, tablet, camera, invalidate]);

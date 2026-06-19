@@ -50,8 +50,9 @@ const FRINGE_THK = 0.36;
 // Outer water edge anchored to the ISLAND outline + a guaranteed minimum
 // margin, so the ring follows the lobed island evenly all the way around (no
 // thin spots / gaps). A gentle extra wobble keeps the sea edge organic.
-const RING_MIN = 1.9; // guaranteed water margin beyond the shore (~1.8× wider —
-//                       room for the boat + karst rocks; still a measured sea)
+const RING_MIN = 2.9; // water margin beyond the shore — wide enough to keep the
+//                       larger foreground longtail fully on the water (+ karst
+//                       rocks to come). Tune down to shrink the sea.
 const RING_VAR = 0.24; // gentle outer irregularity
 const waterOuter = (theta: number) =>
   outlineR(theta) + RING_MIN + RING_VAR * (0.5 + 0.5 * Math.sin(2 * theta + 0.4));
