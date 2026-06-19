@@ -1,0 +1,96 @@
+// Palmkit Studio — STEP 1 palm configuration.
+// Everything tunable lives here so frond count, colors, opacity and hotspot
+// labels are props/config (CLAUDE.md: expandability — structure, don't build).
+
+export type Vec3 = [number, number, number];
+
+/** Where a hotspot's dot is anchored on the model (snapped to a real vertex). */
+export type AnchorKind =
+  | { type: 'frondTip'; frond: number } // tip of frond N
+  | { type: 'crown' } // apex above the crown
+  | { type: 'trunk'; t: number }; // point along the trunk (0 base .. 1 top)
+
+export interface HotspotConfig {
+  id: string;
+  label: string;
+  /** Short supporting line shown under the label. */
+  blurb: string;
+  anchor: AnchorKind;
+  /** Fine-tune the label placement (screen-space-ish nudge), e.g. crown sideways. */
+  labelOffset?: { dx?: number; dy?: number; out?: number };
+}
+
+export interface PalmConfig {
+  frondCount: number;
+  colors: typeof COLORS;
+  hotspots: HotspotConfig[];
+  /** Face translucency — solid yet see-through so the wireframe reads (0..1). */
+  faceOpacity: number;
+  /** Island translucency — slightly lower than the palm, but still solid land. */
+  baseOpacity: number;
+  /** Water translucency — lighter/airier than the land. */
+  waterOpacity: number;
+}
+
+// Sober, cool-leaning palette (CLAUDE.md). No cream/beige in UI.
+// "High-tech blueprint": sober solid faces, luminous TEAL wireframe + vertex
+// field, CORAL hotspot accents so the 6 services stand out from the vertex set.
+export const COLORS = {
+  // Two frond tiers, varied slightly per layer.
+  frond: ['#4E9A6B', '#3E7E57'] as const,
+  // Two trunk tones, blended bottom→top.
+  trunkBottom: '#7C5A30',
+  trunkTop: '#9A6F3C',
+  // Luminous construction layers.
+  edge: '#5FE3D6', // glowing wireframe edges
+  vertex: '#5FE3D6', // glowing vertex points (the full field)
+  // Hotspot accent — warm, distinct from the teal vertex field.
+  hotspot: '#FF6B4A',
+  connector: '#FF6B4A',
+  ink: '#1C2B26', // high-contrast label text on white
+
+  // Island base — light natural beach sand (warm decor is allowed) + a muted
+  // recessive earthy underside. Editable here; slight per-block jitter in layout.
+  sandHi: '#EEE0C2', // top-highlight sand (domed centre / upper blocks)
+  sandMain: '#E5D5AE', // main beach sand
+  sandLo: '#D8C49A', // lower sand blocks (subtle variation)
+  earth1: '#8A7E70', // earth/rock just under the sand
+  earth2: '#7A6F62', // deeper earth
+  earth3: '#665C51', // deepest core
+
+  // Water (Option 1 "Bright turquoise") — echoes the teal accent but reads as
+  // real translucent water. Editable; slight per-block jitter in layout.
+  waterBody: '#1FA6B6', // main water (saturated turquoise — survives bloom wash)
+  waterDeep: '#14869C', // deeper / outer blocks
+  waterShallow: '#56C7D1', // bright shallow ring meeting the shore
+  wetSand: '#BBAE8C', // wet-sand fringe at the waterline (island sand, darkened)
+
+  // Sunrise atmosphere (Option A "Peach-gold"). Soft, recessed dawn — a DOM
+  // gradient behind the canvas + a warm raking key light. Editable here.
+  skyTop: '#FBFCFD', // near-white sky toward the top
+  skyWarm: '#FFF1E2', // gentle warm wash toward the bottom
+  haloCore: '#FFF4E2', // warm near-white core of the sun glow
+  haloMid: '#FFE3C4', // peach/gold mid of the halo, easing to transparent
+  warmKey: '#FFE9D2', // warm key-light colour (raking from the sun side)
+};
+
+// Six services. Anchors are a *subset* of the full vertex field, marked
+// distinctly (coral, larger). labelOffset tidies the reduced-motion all-labels
+// pose (bias AI sideways; de-overlap the two left labels).
+export const HOTSPOTS: HotspotConfig[] = [
+  { id: 'websites', label: 'Websites', blurb: 'Fast, modern sites', anchor: { type: 'frondTip', frond: 0 } },
+  { id: 'seo', label: 'SEO', blurb: 'Found on search', anchor: { type: 'frondTip', frond: 2 } },
+  { id: 'ecommerce', label: 'E-commerce', blurb: 'Stores that sell', anchor: { type: 'frondTip', frond: 4 }, labelOffset: { dy: 0.32 } },
+  { id: 'ai', label: 'AI', blurb: 'Smart automation', anchor: { type: 'crown' }, labelOffset: { dx: 0.9, dy: -0.55 } },
+  { id: 'strategy', label: 'Strategy', blurb: 'Clear direction', anchor: { type: 'trunk', t: 0.62 } },
+  { id: 'brand', label: 'Brand', blurb: 'Identity & design', anchor: { type: 'frondTip', frond: 6 }, labelOffset: { dy: -0.3 } },
+];
+
+export const DEFAULT_CONFIG: PalmConfig = {
+  frondCount: 8,
+  colors: COLORS,
+  hotspots: HOTSPOTS,
+  faceOpacity: 0.9,
+  baseOpacity: 0.88,
+  waterOpacity: 0.7,
+};
