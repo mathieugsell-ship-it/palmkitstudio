@@ -1,0 +1,459 @@
+---
+// Voxel v12 — STEP 8: the palm IS the service map. Full-bleed living scene; the
+// 6 reserved nodes pulse to invite clicks. Clicking a node OR its service in the
+// list expands that service into a detail panel (others recede) while the palm
+// lights that branch; Back/Esc/empty-space returns to the overview.
+//
+// Architecture: ONE client:only island (HeroExperience) owns the state and
+// renders BOTH the scene (portalled into #scene-root for full-bleed) and the
+// services overlay. The headline/subtitle/CTA stay STATIC here for instant LCP,
+// and a <noscript> mirrors the services so they're readable with JS off.
+import '../styles/global.css';
+import HeroExperience from '../components/v12/HeroExperience.tsx';
+import { HOTSPOTS } from '../components/v12/config.ts';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Faster. Further. For less.</title>
+    <meta
+      name="description"
+      content="AI lets us do more, for less — the reach of a big agency, without the big-agency budget. Websites, growth & automation, from Phuket."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main class="hero">
+      <!-- Full-bleed scene mount (the island portals its <Canvas> in here). -->
+      <div id="scene-root" class="scene-bg" aria-hidden="true"></div>
+
+      <!-- Max-width content column: static intro (left) + interactive island. -->
+      <div class="content">
+        <section class="intro text-scrim">
+          <p class="chip"><span aria-hidden="true">🌴</span> From Phuket</p>
+          <h1 class="headline">Faster. Further. For less.</h1>
+          <p class="subtitle">
+            AI lets us do more, for less — the reach of a big agency, without the
+            big-agency budget. Websites, growth &amp; automation, from Phuket.
+          </p>
+          <a href="#offers" class="cta">See our offers</a>
+        </section>
+
+        <HeroExperience client:only="react" />
+      </div>
+
+      <!-- JS-off fallback: the services stay readable. -->
+      <noscript>
+        <section class="noscript-services">
+          <h2>What we do</h2>
+          <dl>
+            {
+              HOTSPOTS.map((s) => (
+                <>
+                  <dt>{s.label}</dt>
+                  <dd>{s.detail}</dd>
+                </>
+              ))
+            }
+          </dl>
+        </section>
+      </noscript>
+
+      <a href="/versions" class="versions-link">← All versions</a>
+    </main>
+
+    <style is:global>
+      :root {
+        --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --font-body: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+        --ink: #1c2b26;
+        --ink-soft: #4b5a54;
+        --teal: #15a89a;
+        --teal-deep: #0f7d72;
+        --coral: #ff6b4a;
+        --coral-ink: #b8341a;
+        --paper: #fbfcfd;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Full-bleed hero -------------------------------------------------------*/
+      .hero {
+        position: relative;
+        width: 100%;
+        min-height: 100svh;
+        overflow: hidden;
+      }
+      .scene-bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+      }
+
+      /* Content column: intro (left) + services-area (right) / stacked mobile. */
+      .content {
+        position: relative;
+        z-index: 10;
+        width: 100%;
+        max-width: 84rem;
+        min-height: 100svh;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 1.75rem;
+        padding: 13vh 1.5rem 6rem;
+        pointer-events: none; /* empty areas pass pointer/hover to the scene */
+      }
+      .content > * {
+        pointer-events: auto;
+      }
+      @media (min-width: 1024px) {
+        .content {
+          display: grid;
+          grid-template-columns: repeat(12, 1fr);
+          align-items: center;
+          column-gap: 2rem;
+          padding: 4rem 2.5rem;
+        }
+        .intro {
+          grid-column: 1 / span 5;
+        }
+        .services-area {
+          grid-column: 8 / span 5;
+          justify-self: end;
+          width: 100%;
+        }
+      }
+
+      /* Local scrim — soft, fades into the scene (no hard box) -----------------*/
+      .text-scrim {
+        border-radius: 1.5rem;
+        background: radial-gradient(
+          120% 130% at 50% 42%,
+          rgba(251, 252, 253, 0.92) 0%,
+          rgba(251, 252, 253, 0.6) 55%,
+          rgba(251, 252, 253, 0) 100%
+        );
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+      }
+      .intro {
+        padding: 1.4rem 1.5rem;
+      }
+      @media (min-width: 1024px) {
+        .intro {
+          padding: 1.75rem 1.9rem;
+          background: linear-gradient(
+            90deg,
+            rgba(251, 252, 253, 0.9) 0%,
+            rgba(251, 252, 253, 0.7) 48%,
+            rgba(251, 252, 253, 0) 100%
+          );
+        }
+        .services-area {
+          background: linear-gradient(
+            270deg,
+            rgba(251, 252, 253, 0.92) 0%,
+            rgba(251, 252, 253, 0.74) 52%,
+            rgba(251, 252, 253, 0) 100%
+          );
+        }
+      }
+
+      /* LEFT · intro ----------------------------------------------------------*/
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin: 0 0 1.25rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(21, 168, 154, 0.12);
+        color: var(--teal-deep);
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .headline {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: clamp(2.6rem, 6vw, 4.1rem);
+        line-height: 1.02;
+        letter-spacing: -0.015em;
+        margin: 0 0 1.1rem;
+        color: var(--ink);
+      }
+      .subtitle {
+        max-width: 32rem;
+        font-size: clamp(1.02rem, 1.5vw, 1.16rem);
+        line-height: 1.6;
+        color: var(--ink-soft);
+        margin: 0 0 1.9rem;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.85rem 1.6rem;
+        border-radius: 0.85rem;
+        background: var(--teal);
+        color: #fff;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        box-shadow: 0 6px 18px -8px rgba(15, 125, 114, 0.7);
+        transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .cta:hover {
+        background: var(--teal-deep);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 22px -8px rgba(15, 125, 114, 0.75);
+      }
+      .cta:focus-visible {
+        outline: 3px solid rgba(21, 168, 154, 0.45);
+        outline-offset: 2px;
+      }
+      .cta-sm {
+        padding: 0.65rem 1.2rem;
+        font-size: 0.92rem;
+        border-radius: 0.7rem;
+      }
+
+      /* RIGHT · services area (overview ⇄ detail cross-fade) ------------------*/
+      .services-area {
+        position: relative;
+        min-height: 23rem;
+        padding: 1.4rem 1.5rem;
+      }
+      .ov,
+      .dt {
+        position: absolute;
+        inset: 1.4rem 1.5rem;
+        transition: opacity 0.28s ease, transform 0.28s ease;
+      }
+      .ov[data-active='false'] {
+        opacity: 0;
+        transform: translateY(-6px);
+        pointer-events: none;
+      }
+      .dt {
+        transition-delay: 0.06s;
+      }
+      .dt[data-active='false'] {
+        opacity: 0;
+        transform: translateY(10px);
+        pointer-events: none;
+      }
+
+      .services-kicker {
+        font-size: 0.74rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--teal-deep);
+        margin: 0 0 0.9rem;
+      }
+      .services {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+      }
+      .service {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.7rem;
+        width: 100%;
+        padding: 0.5rem 0.55rem;
+        border: 0;
+        background: transparent;
+        border-radius: 0.7rem;
+        text-align: left;
+        font-family: inherit;
+        color: inherit;
+        cursor: pointer;
+        transition: background-color 0.18s ease;
+      }
+      .service:hover {
+        background: rgba(21, 168, 154, 0.08);
+      }
+      .service:focus-visible {
+        outline: 3px solid rgba(21, 168, 154, 0.4);
+        outline-offset: 1px;
+      }
+      .service .dot {
+        margin-top: 0.42rem;
+        width: 0.5rem;
+        height: 0.5rem;
+        flex: none;
+        border-radius: 999px;
+        background: var(--teal);
+        transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .service-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.25;
+      }
+      .service .label {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--ink);
+      }
+      .service .blurb {
+        font-size: 0.84rem;
+        color: var(--ink-soft);
+      }
+      .service[data-hot='true'] {
+        background: rgba(255, 107, 74, 0.1);
+      }
+      .service[data-hot='true'] .dot {
+        background: var(--coral);
+        transform: scale(1.45);
+        box-shadow: 0 0 0 4px rgba(255, 107, 74, 0.18);
+      }
+      .service[data-hot='true'] .label {
+        color: var(--coral-ink);
+      }
+
+      .hint {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 1.1rem 0 0 0.55rem;
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+      }
+      .hint-dot {
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 999px;
+        background: var(--coral);
+        box-shadow: 0 0 0 0 rgba(255, 107, 74, 0.5);
+        animation: hintpulse 1.8s ease-in-out infinite;
+      }
+      @keyframes hintpulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 107, 74, 0.45);
+        }
+        50% {
+          box-shadow: 0 0 0 5px rgba(255, 107, 74, 0);
+        }
+      }
+
+      /* DETAIL panel ----------------------------------------------------------*/
+      .back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin: 0 0 0.9rem;
+        padding: 0.3rem 0.55rem 0.3rem 0.4rem;
+        border: 0;
+        background: transparent;
+        border-radius: 0.5rem;
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: var(--teal-deep);
+        cursor: pointer;
+        transition: background-color 0.18s ease;
+      }
+      .back:hover {
+        background: rgba(21, 168, 154, 0.1);
+      }
+      .back:focus-visible {
+        outline: 3px solid rgba(21, 168, 154, 0.4);
+        outline-offset: 1px;
+      }
+      .dt-title {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: clamp(1.7rem, 3vw, 2.2rem);
+        line-height: 1.1;
+        letter-spacing: -0.01em;
+        margin: 0 0 0.7rem;
+        color: var(--ink);
+        outline: none;
+      }
+      .dt-desc {
+        font-size: 1.02rem;
+        line-height: 1.6;
+        color: var(--ink-soft);
+        margin: 0 0 1.5rem;
+        max-width: 26rem;
+      }
+
+      /* Footer link + noscript ------------------------------------------------*/
+      .versions-link {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        z-index: 20;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #525252;
+        text-decoration: none;
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        transition: color 0.18s ease;
+      }
+      .versions-link:hover {
+        color: #171717;
+      }
+      .noscript-services {
+        position: relative;
+        z-index: 10;
+        max-width: 40rem;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+      }
+      .noscript-services dt {
+        font-weight: 600;
+        color: var(--ink);
+        margin-top: 1rem;
+      }
+      .noscript-services dd {
+        margin: 0.25rem 0 0;
+        color: var(--ink-soft);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .cta,
+        .service,
+        .service .dot,
+        .ov,
+        .dt,
+        .back {
+          transition: none;
+        }
+        .hint-dot {
+          animation: none;
+        }
+      }
+    </style>
+  </body>
+</html>
