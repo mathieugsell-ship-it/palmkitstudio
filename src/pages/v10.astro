@@ -1,0 +1,310 @@
+---
+// Voxel v10 — STEP 7: the real hero SECTION around the validated v9 scene.
+// Two-column hero (text + 6 services on the left, the living voxel palm island
+// on the right). The services are real, server-rendered, accessible text that
+// stand alone without JS/WebGL; a tiny window-event bridge links each service
+// to its node on the palm (hover/focus a service → its node glows, and back).
+// The scene itself is the v9 component, untouched (build, dawn backdrop, white
+// settle, ripple, rotation) — only anchor highlight overlays were added.
+import '../styles/global.css';
+import PalmTreeHero from '../components/v10/PalmTreeHero.tsx';
+import { HOTSPOTS } from '../components/v10/config.ts';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Faster. Further. For less.</title>
+    <meta
+      name="description"
+      content="AI lets us do more, for less — the reach of a big agency, without the big-agency budget. Websites, growth & automation, from Phuket."
+    />
+    <!-- Typeface pairing: Fraunces (warm display serif) + Hanken Grotesk (humanist sans). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main class="hero">
+      <div
+        class="mx-auto flex min-h-screen max-w-6xl flex-col gap-10 px-6 py-12 sm:px-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-14 lg:py-16"
+      >
+        <!-- A · intro: chip + headline + subtitle + CTA -->
+        <section class="lg:col-start-1 lg:row-start-1 lg:self-end">
+          <p class="chip">
+            <span aria-hidden="true">🌴</span> From Phuket
+          </p>
+          <h1 class="headline">Faster. Further. For less.</h1>
+          <p class="subtitle">
+            AI lets us do more, for less — the reach of a big agency, without the
+            big-agency budget. Websites, growth &amp; automation, from Phuket.
+          </p>
+          <a href="#offers" class="cta">See our offers</a>
+        </section>
+
+        <!-- B · the living voxel palm island (single client-only island) -->
+        <section
+          class="scene lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:h-full lg:self-stretch"
+          aria-label="Animated 3D voxel palm island"
+        >
+          <PalmTreeHero client:only="react" />
+        </section>
+
+        <!-- C · the 6 services (real, accessible, link to the palm nodes) -->
+        <nav class="lg:col-start-1 lg:row-start-2 lg:self-start" aria-label="Our services">
+          <p class="services-kicker">What we do</p>
+          <ul id="services" class="services">
+            {
+              HOTSPOTS.map((s) => (
+                <li>
+                  <a href="#offers" class="service" data-service={s.id}>
+                    <span class="dot" aria-hidden="true" />
+                    <span class="service-text">
+                      <span class="label">{s.label}</span>
+                      <span class="blurb">{s.blurb}</span>
+                    </span>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+      </div>
+
+      <a href="/versions" class="versions-link">← All versions</a>
+    </main>
+
+    <!-- Cross-island bridge: list ⇄ palm node highlight (progressive enhancement;
+         the list is fully readable/usable without this script). -->
+    <script is:inline>
+      (function () {
+        const list = document.getElementById('services');
+        if (!list) return;
+        const items = Array.prototype.slice.call(list.querySelectorAll('[data-service]'));
+        const emit = (id) => window.dispatchEvent(new CustomEvent('palmkit:hover', { detail: { id } }));
+        items.forEach((el) => {
+          const id = el.getAttribute('data-service');
+          el.addEventListener('pointerenter', () => emit(id));
+          el.addEventListener('pointerleave', () => emit(null));
+          el.addEventListener('focus', () => emit(id));
+          el.addEventListener('blur', () => emit(null));
+        });
+        window.addEventListener('palmkit:active', (e) => {
+          const id = e.detail && e.detail.id;
+          items.forEach((el) => {
+            const on = el.getAttribute('data-service') === id;
+            el.classList.toggle('is-active', on);
+            if (on) el.setAttribute('aria-current', 'true');
+            else el.removeAttribute('aria-current');
+          });
+        });
+      })();
+    </script>
+
+    <style is:global>
+      :root {
+        --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --font-body: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+        --ink: #1c2b26;
+        --ink-soft: #4b5a54;
+        --teal: #15a89a;
+        --teal-deep: #0f7d72;
+        --coral: #ff6b4a;
+        --paper: #fbfcfd;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .hero {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      /* A · intro ------------------------------------------------------------ */
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin: 0 0 1.25rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(21, 168, 154, 0.1);
+        color: var(--teal-deep);
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .headline {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: clamp(2.6rem, 6vw, 4.1rem);
+        line-height: 1.02;
+        letter-spacing: -0.015em;
+        margin: 0 0 1.1rem;
+        color: var(--ink);
+      }
+      .subtitle {
+        max-width: 34rem;
+        font-size: clamp(1.02rem, 1.6vw, 1.18rem);
+        line-height: 1.6;
+        color: var(--ink-soft);
+        margin: 0 0 1.9rem;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.85rem 1.6rem;
+        border-radius: 0.85rem;
+        background: var(--teal);
+        color: #fff;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        box-shadow: 0 6px 18px -8px rgba(15, 125, 114, 0.7);
+        transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .cta:hover {
+        background: var(--teal-deep);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 22px -8px rgba(15, 125, 114, 0.75);
+      }
+      .cta:focus-visible {
+        outline: 3px solid rgba(21, 168, 154, 0.45);
+        outline-offset: 2px;
+      }
+
+      /* B · scene ------------------------------------------------------------ */
+      .scene {
+        position: relative;
+        width: 100%;
+        min-height: 60vh;
+        border-radius: 1.25rem;
+        overflow: hidden;
+      }
+      @media (min-width: 1024px) {
+        .scene {
+          min-height: 34rem;
+        }
+      }
+
+      /* C · services --------------------------------------------------------- */
+      .services-kicker {
+        font-size: 0.74rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--teal-deep);
+        margin: 0 0 0.9rem;
+      }
+      .services {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.35rem;
+      }
+      @media (min-width: 640px) {
+        .services {
+          grid-template-columns: 1fr 1fr;
+          gap: 0.45rem 1.5rem;
+        }
+      }
+      .service {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.7rem;
+        padding: 0.55rem 0.6rem;
+        border-radius: 0.7rem;
+        text-decoration: none;
+        color: inherit;
+        transition: background-color 0.18s ease;
+      }
+      .service:hover {
+        background: rgba(21, 168, 154, 0.07);
+      }
+      .service:focus-visible {
+        outline: 3px solid rgba(21, 168, 154, 0.4);
+        outline-offset: 1px;
+      }
+      .service .dot {
+        margin-top: 0.42rem;
+        width: 0.5rem;
+        height: 0.5rem;
+        flex: none;
+        border-radius: 999px;
+        background: var(--teal);
+        transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .service-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.25;
+      }
+      .service .label {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--ink);
+      }
+      .service .blurb {
+        font-size: 0.84rem;
+        color: var(--ink-soft);
+      }
+      /* Active (hovered service OR hovered palm node OR mobile auto-cycle). */
+      .service.is-active {
+        background: rgba(255, 107, 74, 0.09);
+      }
+      .service.is-active .dot {
+        background: var(--coral);
+        transform: scale(1.45);
+        box-shadow: 0 0 0 4px rgba(255, 107, 74, 0.18);
+      }
+      .service.is-active .label {
+        color: #b8341a;
+      }
+
+      /* Footer link ---------------------------------------------------------- */
+      .versions-link {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        z-index: 10;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #525252;
+        text-decoration: none;
+        backdrop-filter: blur(4px);
+        transition: color 0.18s ease;
+      }
+      .versions-link:hover {
+        color: #171717;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .cta,
+        .service,
+        .service .dot {
+          transition: none;
+        }
+      }
+    </style>
+  </body>
+</html>
