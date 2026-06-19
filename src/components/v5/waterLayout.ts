@@ -43,19 +43,24 @@ function jitter(hex: string, seed: number, hA = 0.02, sA = 0.06, lA = 0.06): str
 const edgeOf = (hex: string, k = 0.72) => `#${new THREE.Color(hex).multiplyScalar(k).getHexString()}`;
 
 // ---- levels (relative to the island: dry rim sand top ≈ -0.28) -------------
-const WATER_R = 2.35; // compact water margin
 const WATER_TOP = -0.42; // water surface sits just below the sand rim
 const WATER_THK = 0.42; // flatter slab — reads as a water surface, not glass walls
 const FRINGE_TOP = -0.3; // wet sand bridges sand → water
 const FRINGE_THK = 0.36;
-// Lobed outer water edge so the sea outline is organic too.
-const waterOutline = (theta: number) =>
-  WATER_R * (1 + 0.08 * Math.sin(2 * theta + 0.3) + 0.05 * Math.sin(4 * theta + 1.0));
+// Outer water edge anchored to the ISLAND outline + a guaranteed minimum
+// margin, so the ring follows the lobed island evenly all the way around (no
+// thin spots / gaps). A gentle extra wobble keeps the sea edge organic.
+const RING_MIN = 1.05; // guaranteed water margin beyond the shore (>= ~2 cells)
+const RING_VAR = 0.18; // gentle outer irregularity
+const waterOuter = (theta: number) =>
+  outlineR(theta) + RING_MIN + RING_VAR * (0.5 + 0.5 * Math.sin(2 * theta + 0.4));
+// Bound for the grid loop: max island outline + max ring margin.
+const GRID_BOUND = 1.6 + RING_MIN + RING_VAR;
 
 export function buildWater(config: PalmConfig): WaterModel {
   const c = config.colors;
   const blocks: WaterBlock[] = [];
-  const M = Math.ceil((WATER_R * 1.25) / CELL);
+  const M = Math.ceil((GRID_BOUND * 1.1) / CELL);
   let n = 0;
 
   for (let ix = -M; ix <= M; ix++) {
@@ -66,7 +71,7 @@ export function buildWater(config: PalmConfig): WaterModel {
       const theta = Math.atan2(z, x);
       const land = outlineR(theta);
       if (d <= land) continue; // island cell — skip (island handles it)
-      if (d > waterOutline(theta)) continue; // beyond the sea edge
+      if (d > waterOuter(theta)) continue; // beyond the sea edge
       const edgeDist = d - land; // distance out from the shore
       const seed = ix * 53 + iz * 29 + 500;
 
