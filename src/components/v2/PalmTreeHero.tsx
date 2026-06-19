@@ -90,7 +90,7 @@ export default function PalmTreeHero({ config = DEFAULT_CONFIG }: { config?: Pal
   const visible = useVisible(wrapRef);
 
   // Selective bloom only on capable desktop; emissive-only fallback otherwise.
-  const bloomEnabled = true; // FORCEBLOOM_TEMP
+  const bloomEnabled = !reducedMotion && !noHover;
   // Rotation runs only when visible and motion is allowed.
   const rotate = visible && !reducedMotion;
   const frameloop: 'always' | 'demand' = reducedMotion || !visible ? 'demand' : 'always';
