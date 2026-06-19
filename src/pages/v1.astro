@@ -1,0 +1,36 @@
+---
+// Voxel v1 — the 1ba569a chunky voxel palm with smaller vertex nodes.
+// Self-contained under src/components/v1/ so future scenery iterations branch
+// from here without touching earlier pages.
+import '../styles/global.css';
+import PalmTreeHero from '../components/v1/PalmTreeHero.tsx';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Voxel v1</title>
+    <meta name="description" content="Palmkit Studio — voxel palm v1 (smaller nodes)." />
+  </head>
+  <body>
+    <main class="h-screen w-screen overflow-hidden bg-white">
+      <!-- Single 3D island; mounted client-only so it never blocks LCP. -->
+      <PalmTreeHero client:only="react" />
+      <a
+        href="/versions"
+        class="fixed bottom-4 right-4 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-600 no-underline backdrop-blur-sm transition-colors hover:text-neutral-900"
+        >← All versions</a
+      >
+    </main>
+    <style is:global>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+    </style>
+  </body>
+</html>

@@ -1,0 +1,52 @@
+---
+// Simple version index — navigate between every palm iteration.
+// Each iteration lives on its own page; this hub grows as we add versions.
+import '../styles/global.css';
+
+const versions = [
+  { href: '/', label: 'Voxel — original', note: 'Chunky Minecraft-style blocks (1ba569a)' },
+  { href: '/v1', label: 'Voxel v1 — smaller nodes', note: '1ba569a with halved vertex node dots' },
+  { href: '/blueprint', label: 'Blueprint — triangulated mesh', note: 'Low-poly translucent mesh palm' },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Versions</title>
+    <meta name="description" content="Palmkit Studio — palm iterations index." />
+  </head>
+  <body>
+    <main class="flex min-h-screen w-screen items-center justify-center bg-[#F4F7F6] px-6">
+      <div class="w-full max-w-md">
+        <p class="mb-1 text-xs font-medium uppercase tracking-wide text-[#15A89A]">Palmkit Studio</p>
+        <h1 class="mb-6 text-lg font-semibold text-neutral-800">Palm versions</h1>
+        <ul class="space-y-2">
+          {
+            versions.map((v) => (
+              <li>
+                <a
+                  href={v.href}
+                  class="block rounded-lg border border-black/10 bg-white px-4 py-3 no-underline shadow-sm transition-colors hover:border-[#15A89A]/50"
+                >
+                  <span class="block text-sm font-semibold text-neutral-800">{v.label}</span>
+                  <span class="block text-xs text-neutral-500">{v.note}</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </main>
+    <style is:global>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f4f7f6;
+      }
+    </style>
+  </body>
+</html>
