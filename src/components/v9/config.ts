@@ -139,7 +139,7 @@ export const DEFAULT_CONFIG: PalmConfig = {
     palmBase: 0.26, palmSpan: 0.42,
     waterBase: 0.6, waterSpan: 0.3,
     rotateEaseIn: 0.6,
-    edgeBuildBoost: 2.5,
+    edgeBuildBoost: 2.0,
     finalEdgeOpacity: 0.85,
     constructionPointsAll: true,
   },

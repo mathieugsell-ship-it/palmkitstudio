@@ -169,23 +169,30 @@ export default function PalmTreeHero({ config = DEFAULT_CONFIG }: { config?: Pal
           />
         </IdleRotation>
 
-        {/* Soft contact shadow, nudged toward the shadow side (away from the
-            low-left sun) so it reads consistently with the warm key. */}
-        <ContactShadows
-          position={[0.35, 0, -0.15]}
-          scale={6}
-          far={4}
-          blur={2.8}
-          opacity={0.28}
-          frames={1}
-          color="#4a3f33"
-          resolution={512}
-        />
+        {/* Soft contact shadow, centered under the ~circular island. Held until
+            the build settles so it bakes the final full-opacity scene ONCE —
+            this keeps it stable and prevents the jump at the rotation hand-off.
+            It sits OUTSIDE IdleRotation, so it never spins with the world. */}
+        {built && (
+          <ContactShadows
+            position={[0, -0.02, 0]}
+            scale={6}
+            far={4}
+            blur={2.8}
+            opacity={0.28}
+            frames={1}
+            color="#4a3f33"
+            resolution={512}
+          />
+        )}
 
-        {/* Selective bloom: only the >1 emissive dots glow; white stays white. */}
+        {/* Selective bloom: only the >1 emissive edges/dots glow. A TIGHT radius
+            keeps the construction glow hugging the wireframe instead of spreading
+            a wide white halo across the transparent canvas (which veiled the dawn
+            gradient mid-build). White (≤1) stays crisp. */}
         {bloomEnabled && (
           <EffectComposer>
-            <Bloom luminanceThreshold={1} mipmapBlur intensity={0.85} radius={0.26} />
+            <Bloom luminanceThreshold={1} mipmapBlur intensity={0.7} radius={0.12} />
           </EffectComposer>
         )}
       </Canvas>
