@@ -49,7 +49,7 @@ function HotspotDot({ id, position, color, active, bloom, onHover }: DotProps) {
 
   return (
     <mesh position={position} scale={scale} onPointerOver={over} onPointerOut={out}>
-      <sphereGeometry args={[0.034, 16, 16]} />
+      <sphereGeometry args={[0.055, 16, 16]} />
       <meshStandardMaterial
         color={color}
         emissive={new THREE.Color(color)}
@@ -65,10 +65,7 @@ function HotspotDot({ id, position, color, active, bloom, onHover }: DotProps) {
 export function PalmTree({ config, activeId, onHover, bloom, pulse }: PalmTreeProps) {
   const { colors } = config;
   const model = useMemo(() => buildPalm(config), [config]);
-  // Edges stay at full (<=1) value: crisp teal lines that read as a precise
-  // 3D-model wireframe, WITHOUT blooming (which would bleed cyan over the faces
-  // and grey out the varied browns/greens). Only the nodes glow.
-  const edgeBoost = 1.0;
+  const edgeBoost = bloom ? 2.5 : 1.0;
 
   return (
     <group>
