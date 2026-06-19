@@ -1,0 +1,648 @@
+---
+// Voxel v13 — STEP 9: blueprint/holographic services UI + real open animation.
+// The palm's 6 points are bigger, brighter, and PING (radar rings) to invite
+// clicks; hovering one floats a blueprint label. Clicking a point/card draws a
+// luminous connector line out to a detail panel whose frame TRACES itself in
+// (wireframe → fill) while the other cards recede. Back / ✕ / Esc / empty-space
+// close. Same coherent holographic language as the palm.
+//
+// Architecture unchanged from v12: ONE client:only island (HeroExperience) owns
+// the state and renders the scene (portalled into #scene-root) + the overlay;
+// headline/CTA stay static for LCP; <noscript> mirrors the services.
+import '../styles/global.css';
+import HeroExperience from '../components/v13/HeroExperience.tsx';
+import { HOTSPOTS } from '../components/v13/config.ts';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Faster. Further. For less.</title>
+    <meta
+      name="description"
+      content="AI lets us do more, for less — the reach of a big agency, without the big-agency budget. Websites, growth & automation, from Phuket."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main class="hero">
+      <div id="scene-root" class="scene-bg" aria-hidden="true"></div>
+
+      <div class="content">
+        <section class="intro text-scrim">
+          <p class="chip"><span aria-hidden="true">🌴</span> From Phuket</p>
+          <h1 class="headline">Faster. Further. For less.</h1>
+          <p class="subtitle">
+            AI lets us do more, for less — the reach of a big agency, without the
+            big-agency budget. Websites, growth &amp; automation, from Phuket.
+          </p>
+          <a href="#offers" class="cta">See our offers</a>
+        </section>
+
+        <HeroExperience client:only="react" />
+      </div>
+
+      <noscript>
+        <section class="noscript-services">
+          <h2>What we do</h2>
+          <dl>
+            {
+              HOTSPOTS.map((s) => (
+                <>
+                  <dt>{s.label}</dt>
+                  <dd>{s.detail}</dd>
+                </>
+              ))
+            }
+          </dl>
+        </section>
+      </noscript>
+
+      <a href="/versions" class="versions-link">← All versions</a>
+    </main>
+
+    <style is:global>
+      :root {
+        --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --font-body: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+        --ink: #1c2b26;
+        --ink-soft: #44544e;
+        --teal: #15a89a;
+        --teal-deep: #0f7d72;
+        --edge: #2bb7ab; /* luminous blueprint edge (teal, legible on light) */
+        --edge-glow: rgba(95, 227, 214, 0.7);
+        --coral: #ff6b4a;
+        --coral-ink: #b8341a;
+        --paper: #fbfcfd;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Full-bleed hero -------------------------------------------------------*/
+      .hero {
+        position: relative;
+        width: 100%;
+        min-height: 100svh;
+        overflow: hidden;
+      }
+      .scene-bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+      }
+      .content {
+        position: relative;
+        z-index: 10;
+        width: 100%;
+        max-width: 84rem;
+        min-height: 100svh;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 1.75rem;
+        padding: 13vh 1.5rem 6rem;
+        pointer-events: none;
+      }
+      .content > * {
+        pointer-events: auto;
+      }
+      /* Connector + floating label never capture pointer (full-screen / fixed). */
+      .connector,
+      .node-label {
+        pointer-events: none;
+      }
+      @media (min-width: 1024px) {
+        .content {
+          display: grid;
+          grid-template-columns: repeat(12, 1fr);
+          align-items: center;
+          column-gap: 2rem;
+          padding: 4rem 2.5rem;
+        }
+        .intro {
+          grid-column: 1 / span 5;
+        }
+        .services-area {
+          grid-column: 8 / span 5;
+          justify-self: end;
+          width: 100%;
+        }
+      }
+
+      /* Intro scrim -----------------------------------------------------------*/
+      .text-scrim {
+        border-radius: 1.5rem;
+        background: radial-gradient(
+          120% 130% at 50% 42%,
+          rgba(251, 252, 253, 0.92) 0%,
+          rgba(251, 252, 253, 0.6) 55%,
+          rgba(251, 252, 253, 0) 100%
+        );
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+      }
+      .intro {
+        padding: 1.4rem 1.5rem;
+      }
+      @media (min-width: 1024px) {
+        .intro {
+          padding: 1.75rem 1.9rem;
+          background: linear-gradient(
+            90deg,
+            rgba(251, 252, 253, 0.9) 0%,
+            rgba(251, 252, 253, 0.7) 48%,
+            rgba(251, 252, 253, 0) 100%
+          );
+        }
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin: 0 0 1.25rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(21, 168, 154, 0.12);
+        color: var(--teal-deep);
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .headline {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: clamp(2.6rem, 6vw, 4.1rem);
+        line-height: 1.02;
+        letter-spacing: -0.015em;
+        margin: 0 0 1.1rem;
+        color: var(--ink);
+      }
+      .subtitle {
+        max-width: 32rem;
+        font-size: clamp(1.02rem, 1.5vw, 1.16rem);
+        line-height: 1.6;
+        color: var(--ink-soft);
+        margin: 0 0 1.9rem;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.85rem 1.6rem;
+        border-radius: 0.85rem;
+        background: var(--teal);
+        color: #fff;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        box-shadow: 0 6px 18px -8px rgba(15, 125, 114, 0.7);
+        transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .cta:hover {
+        background: var(--teal-deep);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 22px -8px rgba(15, 125, 114, 0.75);
+      }
+      .cta:focus-visible {
+        outline: 3px solid rgba(21, 168, 154, 0.45);
+        outline-offset: 2px;
+      }
+      .cta-sm {
+        padding: 0.6rem 1.15rem;
+        font-size: 0.9rem;
+        border-radius: 0.65rem;
+      }
+
+      /* Services area: overview ⇄ detail cross-fade ---------------------------*/
+      .services-area {
+        position: relative;
+        min-height: 24rem;
+      }
+      .ov,
+      .dt {
+        position: absolute;
+        inset: 0;
+        transition: opacity 0.32s ease, transform 0.32s ease;
+      }
+      .ov {
+        padding: 0.4rem;
+      }
+      .ov[data-active='false'] {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.985);
+        pointer-events: none;
+      }
+      .dt {
+        transition-delay: 0.05s;
+      }
+      .dt[data-active='false'] {
+        opacity: 0;
+        transform: translateY(12px) scale(0.99);
+        pointer-events: none;
+      }
+
+      .services-kicker {
+        font-size: 0.74rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--teal-deep);
+        margin: 0 0 0.85rem 0.2rem;
+      }
+      .services {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+
+      /* Blueprint corner brackets + node dot (shared) -------------------------*/
+      .bp-corner {
+        position: absolute;
+        width: 9px;
+        height: 9px;
+        pointer-events: none;
+        opacity: 0.85;
+      }
+      .bp-tl {
+        top: 5px;
+        left: 5px;
+        border-top: 1.5px solid var(--edge);
+        border-left: 1.5px solid var(--edge);
+      }
+      .bp-tr {
+        top: 5px;
+        right: 5px;
+        border-top: 1.5px solid var(--edge);
+        border-right: 1.5px solid var(--edge);
+      }
+      .bp-bl {
+        bottom: 5px;
+        left: 5px;
+        border-bottom: 1.5px solid var(--edge);
+        border-left: 1.5px solid var(--edge);
+      }
+      .bp-br {
+        bottom: 5px;
+        right: 5px;
+        border-bottom: 1.5px solid var(--edge);
+        border-right: 1.5px solid var(--edge);
+      }
+      .bp-node {
+        width: 0.5rem;
+        height: 0.5rem;
+        flex: none;
+        margin-top: 0.4rem;
+        border-radius: 999px;
+        background: var(--edge);
+        box-shadow: 0 0 8px 1px var(--edge-glow);
+        transition: background-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      /* Holographic service cards (overview) ----------------------------------*/
+      .bp-card {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.7rem;
+        width: 100%;
+        padding: 0.7rem 0.8rem;
+        border: 1px solid rgba(43, 183, 171, 0.5);
+        border-radius: 0.6rem;
+        background: rgba(244, 253, 251, 0.55);
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
+        box-shadow: 0 4px 18px -10px rgba(21, 168, 154, 0.5), inset 0 0 12px rgba(95, 227, 214, 0.08);
+        text-align: left;
+        font-family: inherit;
+        color: inherit;
+        cursor: pointer;
+        transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+      }
+      .bp-card:hover,
+      .bp-card[data-hot='true'] {
+        border-color: rgba(255, 107, 74, 0.65);
+        background: rgba(255, 247, 244, 0.62);
+        box-shadow: 0 8px 24px -10px rgba(255, 107, 74, 0.5), inset 0 0 14px rgba(255, 107, 74, 0.1);
+        transform: translateY(-1px);
+      }
+      .bp-card:focus-visible {
+        outline: 3px solid rgba(43, 183, 171, 0.6);
+        outline-offset: 2px;
+      }
+      .bp-card[data-hot='true'] .bp-corner {
+        border-color: var(--coral);
+      }
+      .bp-card[data-hot='true'] .bp-node {
+        background: var(--coral);
+        box-shadow: 0 0 10px 2px rgba(255, 107, 74, 0.7);
+      }
+      .service-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.25;
+      }
+      .label {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--ink);
+      }
+      .blurb {
+        font-size: 0.84rem;
+        color: var(--ink-soft);
+      }
+      .bp-card[data-hot='true'] .label {
+        color: var(--coral-ink);
+      }
+
+      /* Hint (fades after first interaction) ----------------------------------*/
+      .hint {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 1rem 0 0 0.55rem;
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: var(--teal-deep);
+        transition: opacity 0.4s ease;
+      }
+      .hint[data-fade='true'] {
+        opacity: 0;
+      }
+      .hint-dot {
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 999px;
+        background: var(--coral);
+        animation: hintpulse 1.8s ease-in-out infinite;
+      }
+      @keyframes hintpulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 107, 74, 0.5);
+        }
+        50% {
+          box-shadow: 0 0 0 6px rgba(255, 107, 74, 0);
+        }
+      }
+
+      /* Blueprint detail panel (traces in) ------------------------------------*/
+      .bp-fill {
+        position: absolute;
+        inset: 0;
+        border-radius: 0.9rem;
+        background: rgba(244, 253, 251, 0.78);
+        -webkit-backdrop-filter: blur(9px);
+        backdrop-filter: blur(9px);
+        box-shadow: 0 12px 44px -18px rgba(21, 168, 154, 0.55), inset 0 0 26px rgba(95, 227, 214, 0.1);
+        opacity: 0;
+        transition: opacity 0.3s ease 0.14s;
+      }
+      .bp-frame {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        pointer-events: none;
+      }
+      .bp-frame-rect {
+        fill: none;
+        stroke: var(--edge);
+        stroke-width: 1.4;
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        filter: drop-shadow(0 0 3px var(--edge-glow));
+        transition: stroke-dashoffset 0.5s ease;
+      }
+      .dt .bp-corner {
+        width: 13px;
+        height: 13px;
+        opacity: 0;
+        transition: opacity 0.25s ease 0.3s;
+      }
+      .dt[data-active='true'] .bp-fill {
+        opacity: 1;
+      }
+      .dt[data-active='true'] .bp-frame-rect {
+        stroke-dashoffset: 0;
+      }
+      .dt[data-active='true'] .bp-corner {
+        opacity: 0.9;
+      }
+      .dt-inner {
+        position: relative;
+        padding: 1.4rem 1.55rem 1.5rem;
+        opacity: 0;
+        transition: opacity 0.28s ease 0.2s;
+      }
+      .dt[data-active='true'] .dt-inner {
+        opacity: 1;
+      }
+      .dt-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+      }
+      .back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.55rem 0.3rem 0.4rem;
+        border: 0;
+        background: transparent;
+        border-radius: 0.5rem;
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: var(--teal-deep);
+        cursor: pointer;
+        transition: background-color 0.18s ease;
+      }
+      .back:hover {
+        background: rgba(43, 183, 171, 0.12);
+      }
+      .dt-close {
+        width: 1.9rem;
+        height: 1.9rem;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(43, 183, 171, 0.5);
+        border-radius: 0.5rem;
+        background: transparent;
+        color: var(--ink-soft);
+        font-size: 0.78rem;
+        cursor: pointer;
+        transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+      }
+      .dt-close:hover {
+        border-color: var(--coral);
+        color: var(--coral-ink);
+        background: rgba(255, 107, 74, 0.08);
+      }
+      .back:focus-visible,
+      .dt-close:focus-visible {
+        outline: 3px solid rgba(43, 183, 171, 0.55);
+        outline-offset: 2px;
+      }
+      .dt-title {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: clamp(1.7rem, 3vw, 2.2rem);
+        line-height: 1.1;
+        letter-spacing: -0.01em;
+        margin: 0 0 0.7rem;
+        color: var(--ink);
+        outline: none;
+      }
+      .dt-node {
+        margin-top: 0;
+        width: 0.55rem;
+        height: 0.55rem;
+        background: var(--coral);
+        box-shadow: 0 0 10px 2px rgba(255, 107, 74, 0.6);
+      }
+      .dt-desc {
+        font-size: 1.02rem;
+        line-height: 1.6;
+        color: var(--ink-soft);
+        margin: 0 0 1.4rem;
+        max-width: 26rem;
+      }
+
+      /* Connector line (desktop) + floating node label ------------------------*/
+      .connector {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9;
+        overflow: visible;
+      }
+      .connector-line {
+        stroke: var(--edge);
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        opacity: 0;
+        filter: drop-shadow(0 0 3px var(--edge-glow));
+        transition: opacity 0.15s ease;
+      }
+      .node-label {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 16;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(43, 183, 171, 0.6);
+        background: rgba(244, 253, 251, 0.85);
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
+        box-shadow: 0 4px 14px -8px rgba(21, 168, 154, 0.6);
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+        will-change: transform;
+      }
+      .node-label[data-show='true'] {
+        opacity: 1;
+      }
+      .node-label-dot {
+        width: 0.4rem;
+        height: 0.4rem;
+        border-radius: 999px;
+        background: var(--coral);
+        box-shadow: 0 0 8px 1px rgba(255, 107, 74, 0.7);
+      }
+
+      /* Footer link + noscript ------------------------------------------------*/
+      .versions-link {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        z-index: 20;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #525252;
+        text-decoration: none;
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        transition: color 0.18s ease;
+      }
+      .versions-link:hover {
+        color: #171717;
+      }
+      .noscript-services {
+        position: relative;
+        z-index: 10;
+        max-width: 40rem;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+      }
+      .noscript-services dt {
+        font-weight: 600;
+        color: var(--ink);
+        margin-top: 1rem;
+      }
+      .noscript-services dd {
+        margin: 0.25rem 0 0;
+        color: var(--ink-soft);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .cta,
+        .service,
+        .bp-card,
+        .bp-node,
+        .ov,
+        .dt,
+        .dt-inner,
+        .bp-fill,
+        .bp-frame-rect,
+        .bp-corner,
+        .back,
+        .dt-close,
+        .connector-line,
+        .node-label {
+          transition: none;
+        }
+        .hint-dot {
+          animation: none;
+        }
+      }
+    </style>
+  </body>
+</html>
