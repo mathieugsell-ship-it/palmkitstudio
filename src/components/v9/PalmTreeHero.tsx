@@ -2,7 +2,7 @@
 // One Canvas: white scene, soft layered light, baked contact shadow, selective
 // bloom on the glowing dots, slow delta-based idle rotation, and the full
 // accessibility/performance contract from CLAUDE.md.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -69,6 +69,72 @@ function IdleRotation({
     ref.current.rotation.y += delta * 0.18 * s; // framerate-independent
   });
   return <group ref={ref}>{children}</group>;
+}
+
+// Dawn backdrop rendered INSIDE the scene as `scene.background`, so the
+// validated sunrise gradient is part of the render and ALWAYS sits behind
+// everything. Unlike a DOM layer behind a transparent canvas, the translucent
+// faces fading in during the build can't wash it out. Same colors + placement
+// as before: a vertical sky wash + an elliptical sun-halo low-left, drawn to a
+// canvas texture and re-drawn on resize so it stays screen-fixed (never rotates).
+function DawnBackground({ colors }: { colors: PalmConfig['colors'] }) {
+  const scene = useThree((s) => s.scene);
+  const invalidate = useThree((s) => s.invalidate);
+  const size = useThree((s) => s.size);
+  const texture = useMemo(() => {
+    const t = new THREE.CanvasTexture(document.createElement('canvas'));
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }, []);
+
+  useLayoutEffect(() => {
+    const w = Math.max(2, Math.round(size.width));
+    const h = Math.max(2, Math.round(size.height));
+    const canvas = texture.image as HTMLCanvasElement;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const rgba = (hex: string, a: number) => {
+      const n = parseInt(hex.slice(1), 16);
+      return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+    };
+    // Sky: near-white top, gentle warm wash toward the bottom (linear 180deg).
+    const sky = ctx.createLinearGradient(0, 0, 0, h);
+    sky.addColorStop(0, colors.skyTop);
+    sky.addColorStop(0.5, colors.skyTop);
+    sky.addColorStop(1, colors.skyWarm);
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, w, h);
+    // Sun halo: warm core low-left (20%/88%), elliptical (60%×52%), easing to
+    // transparent peach by 60% — no hard disc. Scale the context to get the
+    // ellipse from a unit-circle radial gradient.
+    ctx.save();
+    ctx.translate(0.2 * w, 0.88 * h);
+    ctx.scale(0.6 * w, 0.52 * h);
+    const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+    halo.addColorStop(0, colors.haloCore);
+    halo.addColorStop(0.26, rgba(colors.haloMid, 0.55));
+    halo.addColorStop(0.6, rgba(colors.haloMid, 0));
+    halo.addColorStop(1, rgba(colors.haloMid, 0));
+    ctx.fillStyle = halo;
+    ctx.fillRect(-1e4, -1e4, 2e4, 2e4);
+    ctx.restore();
+
+    texture.needsUpdate = true;
+    scene.background = texture;
+    invalidate(); // repaint in demand frameloop
+  }, [scene, invalidate, size.width, size.height, texture, colors]);
+
+  useEffect(
+    () => () => {
+      if (scene.background === texture) scene.background = null;
+      texture.dispose();
+    },
+    [scene, texture],
+  );
+
+  return null;
 }
 
 /** In demand frameloop, request a render when interaction state changes. */
@@ -147,6 +213,10 @@ export default function PalmTreeHero({ config = DEFAULT_CONFIG }: { config?: Pal
         fallback={<NoWebGL config={config} />}
       >
         <DemandInvalidate trigger={reducedMotion} />
+
+        {/* Sunrise gradient as the rendered scene background (sits behind all
+            geometry — translucent build faces can't veil it). */}
+        <DawnBackground colors={config.colors} />
 
         {/* Dawn lighting: soft neutral fill + a WARM raking key from the sun
             side (low-left), so the palm gets a warm lit side and belongs to the
