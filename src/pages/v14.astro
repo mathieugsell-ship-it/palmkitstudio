@@ -1,0 +1,31 @@
+---
+// Voxel v14 — copied from v9 (clean validated scene: build → dawn → ripple →
+// white settle → rotation). Adds (1) a small stylized voxel longtail boat
+// floating beside the island, and (2) a responsive camera that pulls back on
+// narrow screens so the whole diorama fits on mobile. No interactivity/UI.
+import '../styles/global.css';
+import PalmTreeHero from '../components/v14/PalmTreeHero.tsx';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Voxel v14</title>
+    <meta name="description" content="Palmkit Studio — voxel diorama with a little longtail boat, mobile-fit." />
+  </head>
+  <body>
+    <main class="h-screen w-screen overflow-hidden">
+      <PalmTreeHero client:only="react" />
+      <a
+        href="/versions"
+        class="fixed bottom-4 right-4 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-600 no-underline backdrop-blur-sm transition-colors hover:text-neutral-900"
+        >← All versions</a
+      >
+    </main>
+    <style is:global>
+      html, body { margin: 0; padding: 0; background: #fbfcfd; }
+    </style>
+  </body>
+</html>
