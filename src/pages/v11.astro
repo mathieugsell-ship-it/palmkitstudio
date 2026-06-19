@@ -1,0 +1,366 @@
+---
+// Voxel v11 — STEP 7 (redo): the 3D scene is the FULL-BLEED background of the
+// whole hero; the UI floats on top. Intro (chip + headline + subtitle + CTA) to
+// the LEFT, the 6 services to the RIGHT, the living voxel palm island centred
+// between them. A barely-there local scrim keeps the type legible over the live
+// scene without hiding it. The scene is the validated v11 component (= v9 scene
+// + hybrid node highlight), only reframed for full-bleed (centred / mobile).
+import '../styles/global.css';
+import PalmTreeHero from '../components/v11/PalmTreeHero.tsx';
+import { HOTSPOTS } from '../components/v11/config.ts';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Faster. Further. For less.</title>
+    <meta
+      name="description"
+      content="AI lets us do more, for less — the reach of a big agency, without the big-agency budget. Websites, growth & automation, from Phuket."
+    />
+    <!-- Typeface pairing: Fraunces (warm display serif) + Hanken Grotesk (humanist sans). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main class="hero">
+      <!-- Full-bleed living scene (single client-only island, fills the hero) -->
+      <div class="scene-bg" aria-hidden="true">
+        <PalmTreeHero client:only="react" />
+      </div>
+
+      <!-- UI overlay: text left · services right · palm centred between -->
+      <div class="overlay">
+        <!-- LEFT · intro -->
+        <section class="intro text-scrim left">
+          <p class="chip"><span aria-hidden="true">🌴</span> From Phuket</p>
+          <h1 class="headline">Faster. Further. For less.</h1>
+          <p class="subtitle">
+            AI lets us do more, for less — the reach of a big agency, without the
+            big-agency budget. Websites, growth &amp; automation, from Phuket.
+          </p>
+          <a href="#offers" class="cta">See our offers</a>
+        </section>
+
+        <!-- RIGHT · the 6 services (real, accessible, linked to palm nodes) -->
+        <nav class="services-wrap text-scrim right" aria-label="Our services">
+          <p class="services-kicker">What we do</p>
+          <ul id="services" class="services">
+            {
+              HOTSPOTS.map((s) => (
+                <li>
+                  <a href="#offers" class="service" data-service={s.id}>
+                    <span class="dot" aria-hidden="true" />
+                    <span class="service-text">
+                      <span class="label">{s.label}</span>
+                      <span class="blurb">{s.blurb}</span>
+                    </span>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+      </div>
+
+      <a href="/versions" class="versions-link">← All versions</a>
+    </main>
+
+    <!-- Cross-island bridge: list ⇄ palm node highlight (progressive enhancement;
+         the list is fully readable/usable without this script). -->
+    <script is:inline>
+      (function () {
+        const list = document.getElementById('services');
+        if (!list) return;
+        const items = Array.prototype.slice.call(list.querySelectorAll('[data-service]'));
+        const emit = (id) => window.dispatchEvent(new CustomEvent('palmkit:hover', { detail: { id } }));
+        items.forEach((el) => {
+          const id = el.getAttribute('data-service');
+          el.addEventListener('pointerenter', () => emit(id));
+          el.addEventListener('pointerleave', () => emit(null));
+          el.addEventListener('focus', () => emit(id));
+          el.addEventListener('blur', () => emit(null));
+        });
+        window.addEventListener('palmkit:active', (e) => {
+          const id = e.detail && e.detail.id;
+          items.forEach((el) => {
+            const on = el.getAttribute('data-service') === id;
+            el.classList.toggle('is-active', on);
+            if (on) el.setAttribute('aria-current', 'true');
+            else el.removeAttribute('aria-current');
+          });
+        });
+      })();
+    </script>
+
+    <style is:global>
+      :root {
+        --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --font-body: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+        --ink: #1c2b26;
+        --ink-soft: #4b5a54;
+        --teal: #15a89a;
+        --teal-deep: #0f7d72;
+        --coral: #ff6b4a;
+        --paper: #fbfcfd;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Full-bleed hero -------------------------------------------------------*/
+      .hero {
+        position: relative;
+        width: 100%;
+        min-height: 100svh;
+        overflow: hidden;
+      }
+      .scene-bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+      }
+
+      /* Overlay grid: text left / services right / palm centre ----------------*/
+      .overlay {
+        position: relative;
+        z-index: 10;
+        min-height: 100svh;
+        max-width: 84rem;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 1.75rem;
+        padding: 13vh 1.5rem 6rem;
+        pointer-events: none; /* let the scene receive pointer/hover where there's no UI */
+      }
+      .overlay > * {
+        pointer-events: auto;
+      }
+      @media (min-width: 1024px) {
+        .overlay {
+          display: grid;
+          grid-template-columns: repeat(12, 1fr);
+          align-items: center;
+          column-gap: 2rem;
+          padding: 4rem 2.5rem;
+        }
+        .intro {
+          grid-column: 1 / span 5;
+        }
+        .services-wrap {
+          grid-column: 9 / span 4;
+          justify-self: end;
+        }
+      }
+
+      /* Local scrim — soft, fades into the scene (no hard box) -----------------*/
+      .text-scrim {
+        border-radius: 1.5rem;
+        padding: 1.4rem 1.5rem;
+        /* mobile: gentle halo that fades at all edges */
+        background: radial-gradient(
+          120% 130% at 50% 42%,
+          rgba(251, 252, 253, 0.92) 0%,
+          rgba(251, 252, 253, 0.6) 55%,
+          rgba(251, 252, 253, 0) 100%
+        );
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+      }
+      @media (min-width: 1024px) {
+        .text-scrim {
+          padding: 1.75rem 1.9rem;
+        }
+        .text-scrim.left {
+          background: linear-gradient(
+            90deg,
+            rgba(251, 252, 253, 0.9) 0%,
+            rgba(251, 252, 253, 0.7) 48%,
+            rgba(251, 252, 253, 0) 100%
+          );
+        }
+        .text-scrim.right {
+          background: linear-gradient(
+            270deg,
+            rgba(251, 252, 253, 0.9) 0%,
+            rgba(251, 252, 253, 0.7) 48%,
+            rgba(251, 252, 253, 0) 100%
+          );
+        }
+      }
+
+      /* LEFT · intro ----------------------------------------------------------*/
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin: 0 0 1.25rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(21, 168, 154, 0.12);
+        color: var(--teal-deep);
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .headline {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: clamp(2.6rem, 6vw, 4.1rem);
+        line-height: 1.02;
+        letter-spacing: -0.015em;
+        margin: 0 0 1.1rem;
+        color: var(--ink);
+      }
+      .subtitle {
+        max-width: 32rem;
+        font-size: clamp(1.02rem, 1.5vw, 1.16rem);
+        line-height: 1.6;
+        color: var(--ink-soft);
+        margin: 0 0 1.9rem;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.85rem 1.6rem;
+        border-radius: 0.85rem;
+        background: var(--teal);
+        color: #fff;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        box-shadow: 0 6px 18px -8px rgba(15, 125, 114, 0.7);
+        transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .cta:hover {
+        background: var(--teal-deep);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 22px -8px rgba(15, 125, 114, 0.75);
+      }
+      .cta:focus-visible {
+        outline: 3px solid rgba(21, 168, 154, 0.45);
+        outline-offset: 2px;
+      }
+
+      /* RIGHT · services ------------------------------------------------------*/
+      .services-kicker {
+        font-size: 0.74rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--teal-deep);
+        margin: 0 0 0.9rem;
+      }
+      .services {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.3rem;
+      }
+      @media (min-width: 640px) and (max-width: 1023px) {
+        .services {
+          grid-template-columns: 1fr 1fr;
+          gap: 0.4rem 1.25rem;
+        }
+      }
+      .service {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.7rem;
+        padding: 0.5rem 0.55rem;
+        border-radius: 0.7rem;
+        text-decoration: none;
+        color: inherit;
+        transition: background-color 0.18s ease;
+      }
+      .service:hover {
+        background: rgba(21, 168, 154, 0.08);
+      }
+      .service:focus-visible {
+        outline: 3px solid rgba(21, 168, 154, 0.4);
+        outline-offset: 1px;
+      }
+      .service .dot {
+        margin-top: 0.42rem;
+        width: 0.5rem;
+        height: 0.5rem;
+        flex: none;
+        border-radius: 999px;
+        background: var(--teal);
+        transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .service-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.25;
+      }
+      .service .label {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--ink);
+      }
+      .service .blurb {
+        font-size: 0.84rem;
+        color: var(--ink-soft);
+      }
+      .service.is-active {
+        background: rgba(255, 107, 74, 0.1);
+      }
+      .service.is-active .dot {
+        background: var(--coral);
+        transform: scale(1.45);
+        box-shadow: 0 0 0 4px rgba(255, 107, 74, 0.18);
+      }
+      .service.is-active .label {
+        color: #b8341a;
+      }
+
+      /* Footer link -----------------------------------------------------------*/
+      .versions-link {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        z-index: 20;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #525252;
+        text-decoration: none;
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        transition: color 0.18s ease;
+      }
+      .versions-link:hover {
+        color: #171717;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .cta,
+        .service,
+        .service .dot {
+          transition: none;
+        }
+      }
+    </style>
+  </body>
+</html>
