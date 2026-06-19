@@ -1,0 +1,31 @@
+---
+// Voxel v15 — copied from v14 (palm + island + rippling water + longtail boat,
+// dawn, white settle edges, rotation paused). Adds two stylized voxel KARST
+// PITONS (Phang Nga limestone stacks) rising from the open water on the right,
+// balancing the boat on the front-left. No interactivity/UI.
+import '../styles/global.css';
+import PalmTreeHero from '../components/v15/PalmTreeHero.tsx';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Voxel v15</title>
+    <meta name="description" content="Palmkit Studio — voxel Andaman diorama: palm, island, boat & karst pitons." />
+  </head>
+  <body>
+    <main class="h-screen w-screen overflow-hidden">
+      <PalmTreeHero client:only="react" />
+      <a
+        href="/versions"
+        class="fixed bottom-4 right-4 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-600 no-underline backdrop-blur-sm transition-colors hover:text-neutral-900"
+        >← All versions</a
+      >
+    </main>
+    <style is:global>
+      html, body { margin: 0; padding: 0; background: #fbfcfd; }
+    </style>
+  </body>
+</html>
