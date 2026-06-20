@@ -1,0 +1,31 @@
+---
+// Voxel v30 — copied from v29. ONLY change: slim the palm TRUNK a bit so it takes
+// up less room in the centre of the now-full island and balances better with the
+// scene. Crown, fronds, island, water, boat, pitons, sun all unchanged. No
+// interactivity/UI; rotation paused.
+import '../styles/global.css';
+import PalmTreeHero from '../components/v30/PalmTreeHero.tsx';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Voxel v30</title>
+    <meta name="description" content="Palmkit Studio — voxel Andaman dawn; slimmer palm trunk, everything else unchanged." />
+  </head>
+  <body>
+    <main class="h-screen w-screen overflow-hidden">
+      <PalmTreeHero client:only="react" />
+      <a
+        href="/versions"
+        class="fixed bottom-4 right-4 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-600 no-underline backdrop-blur-sm transition-colors hover:text-neutral-900"
+        >← All versions</a
+      >
+    </main>
+    <style is:global>
+      html, body { margin: 0; padding: 0; background: #fbfcfd; }
+    </style>
+  </body>
+</html>
