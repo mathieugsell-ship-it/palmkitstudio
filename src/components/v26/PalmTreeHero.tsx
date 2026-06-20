@@ -252,7 +252,7 @@ export default function PalmTreeHero({ config = DEFAULT_CONFIG }: { config?: Pal
 
         {/* Warm voxel sun low on the horizon (center-left), behind the scene.
             OUTSIDE the rotation group — a fixed billboard backdrop. */}
-        <VoxelSun config={config} />
+        <VoxelSun config={config} reducedMotion={reducedMotion} />
 
         {/* Whole island→palm→water world builds itself, then settles to white
             edges. Rotation is held during the build and eased in afterwards. */}

@@ -1,10 +1,12 @@
-// Voxel SUN on the horizon (scenery, v26). A chunky billboarded voxel disc that
-// reads as a soft, warm rising sun low on the left/center-left — balancing the
-// pitons on the back-right and anchoring the dawn light. Flat UNLIT warm faces
-// (it's a light source) + thin warm edges (voxel style) + a faint soft halo;
-// luminous but not a harsh neon disc. Sits far back behind the scene, billboarded
-// to face the camera so it stays round. Static; no glowing nodes. Maps to Growth.
-import { useEffect, useMemo, useRef } from 'react';
+// Voxel SUN on the horizon (scenery, v26). A clean, solid filled blocky DISC
+// that reads as a soft warm sun — no internal cross/grid pattern: one instanced
+// mesh, smooth warm gradient (brighter core → peach edge), a few short ray
+// blocks around the rim, and a faint soft halo. Flat UNLIT (it's a light source)
+// so it glows softly against the dawn without harsh bloom. Billboarded to face
+// the camera (stays round, re-faces under the mobile CameraRig). It BUILDS IN
+// with the scene — its blocks assemble from points outward over the build
+// window — instead of popping in pre-made. Static once built. Maps to Growth.
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { PalmConfig } from './config';
@@ -14,53 +16,51 @@ const SUN_POS: [number, number, number] = [-10, 0.6, -11];
 const SUN_R = 1.85; // world radius — big enough to read, still modest
 const CELL = 0.46; // chunky voxel cell
 
-export function VoxelSun({ config }: { config: PalmConfig }) {
+const smooth = (x: number) => {
+  const c = x < 0 ? 0 : x > 1 ? 1 : x;
+  return c * c * (3 - 2 * c);
+};
+
+export function VoxelSun({ config, reducedMotion }: { config: PalmConfig; reducedMotion: boolean }) {
   const c = config.colors;
   const groupRef = useRef<THREE.Group>(null);
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const haloRef = useRef<THREE.Mesh>(null);
   const camera = useThree((s) => s.camera);
+  const duration = config.build.duration;
 
-  // Blocky disc cells (in the billboard's local u,v plane), tiered by radius.
+  // Blocks: the filled disc + a few short rim rays. Each gets a smooth warm
+  // colour (no hard tiers → no cross) and a staggered reveal (centre → out).
   const cells = useMemo(() => {
-    const out: { pos: [number, number, number]; tier: number }[] = [];
+    const core = new THREE.Color(c.sunCore);
+    const mid = new THREE.Color(c.sunMid);
+    const edge = new THREE.Color(c.sunEdge);
+    const out: { u: number; v: number; color: THREE.Color; reveal: number }[] = [];
     const m = Math.ceil(SUN_R / CELL);
     for (let i = -m; i <= m; i++)
       for (let j = -m; j <= m; j++) {
         const u = i * CELL;
         const v = j * CELL;
         const r = Math.hypot(u, v);
-        if (r > SUN_R - CELL * 0.25) continue; // blocky circle edge
+        if (r > SUN_R - CELL * 0.25) continue; // blocky circle
         const t = r / SUN_R;
-        out.push({ pos: [u, v, 0], tier: t < 0.34 ? 0 : t < 0.7 ? 1 : 2 });
+        const col = core.clone().lerp(mid, smooth(t)); // smooth, brighter core
+        out.push({ u, v, color: col, reveal: 0.45 + 0.4 * t });
       }
+    // short rim rays (8 directions)
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      const rr = SUN_R + CELL * 0.55;
+      out.push({ u: rr * Math.cos(a), v: rr * Math.sin(a), color: edge.clone(), reveal: 0.86 });
+    }
     return out;
-  }, []);
+  }, [c.sunCore, c.sunMid, c.sunEdge]);
 
-  const cubeGeo = useMemo(() => new THREE.BoxGeometry(CELL * 0.98, CELL * 0.98, CELL * 0.5), []);
-  const edgeGeo = useMemo(() => new THREE.EdgesGeometry(cubeGeo, 15), [cubeGeo]);
-  const mats = useMemo(
-    () =>
-      [c.sunCore, c.sunMid, c.sunEdge].map(
-        (hex) =>
-          new THREE.MeshBasicMaterial({
-            color: new THREE.Color(hex),
-            toneMapped: false,
-            transparent: true,
-            opacity: 0.96,
-            side: THREE.DoubleSide,
-          }),
-      ),
-    [c.sunCore, c.sunMid, c.sunEdge],
-  );
-  const edgeMat = useMemo(
-    () =>
-      new THREE.LineBasicMaterial({
-        color: new THREE.Color(c.sunEdgeLine),
-        toneMapped: false,
-        transparent: true,
-        opacity: 0.5,
-        depthWrite: false,
-      }),
-    [c.sunEdgeLine],
+  const count = cells.length;
+  const cubeGeo = useMemo(() => new THREE.BoxGeometry(CELL * 0.99, CELL * 0.99, CELL * 0.5), []);
+  const cubeMat = useMemo(
+    () => new THREE.MeshBasicMaterial({ toneMapped: false, transparent: true, opacity: 0.95, side: THREE.DoubleSide }),
+    [],
   );
   const haloGeo = useMemo(() => new THREE.CircleGeometry(SUN_R * 1.6, 40), []);
   const haloMat = useMemo(
@@ -69,39 +69,83 @@ export function VoxelSun({ config }: { config: PalmConfig }) {
         color: new THREE.Color(c.sunHalo),
         toneMapped: false,
         transparent: true,
-        opacity: 0.14,
+        opacity: 0,
         depthWrite: false,
         side: THREE.DoubleSide,
       }),
     [c.sunHalo],
   );
 
+  const scratch = useMemo(
+    () => ({ m: new THREE.Matrix4(), p: new THREE.Vector3(), q: new THREE.Quaternion(), s: new THREE.Vector3() }),
+    [],
+  );
+  const elapsed = useRef(reducedMotion ? duration : 0);
+  const builtRef = useRef(reducedMotion);
+
+  // Colours once; initial matrices (full if reduced-motion, else collapsed).
+  useLayoutEffect(() => {
+    const im = meshRef.current;
+    if (!im) return;
+    for (let i = 0; i < count; i++) im.setColorAt(i, cells[i].color);
+    if (im.instanceColor) im.instanceColor.needsUpdate = true;
+    const full = reducedMotion;
+    for (let i = 0; i < count; i++) {
+      scratch.p.set(cells[i].u, cells[i].v, 0);
+      scratch.s.setScalar(full ? 1 : 0.0001);
+      scratch.m.compose(scratch.p, scratch.q, scratch.s);
+      im.setMatrixAt(i, scratch.m);
+    }
+    im.instanceMatrix.needsUpdate = true;
+    haloMat.opacity = full ? 0.14 : 0;
+  }, [cells, count, reducedMotion, scratch, haloMat]);
+
   useEffect(
     () => () => {
       cubeGeo.dispose();
-      edgeGeo.dispose();
-      mats.forEach((m) => m.dispose());
-      edgeMat.dispose();
+      cubeMat.dispose();
       haloGeo.dispose();
       haloMat.dispose();
     },
-    [cubeGeo, edgeGeo, mats, edgeMat, haloGeo, haloMat],
+    [cubeGeo, cubeMat, haloGeo, haloMat],
   );
 
-  // Billboard: face the camera each frame (also handles the mobile CameraRig).
-  useFrame(() => {
+  useFrame((_, delta) => {
+    // Billboard: always face the camera (round, re-faces under CameraRig).
     if (groupRef.current) groupRef.current.lookAt(camera.position);
+
+    if (builtRef.current) return;
+    const im = meshRef.current;
+    if (!im) return;
+    elapsed.current += delta;
+    const p = Math.min(elapsed.current / duration, 1);
+    const win = 0.16;
+    for (let i = 0; i < count; i++) {
+      const s = smooth((p - cells[i].reveal) / win); // grows from a point → full
+      scratch.p.set(cells[i].u, cells[i].v, 0);
+      scratch.s.setScalar(Math.max(s, 0.0001));
+      scratch.m.compose(scratch.p, scratch.q, scratch.s);
+      im.setMatrixAt(i, scratch.m);
+    }
+    im.instanceMatrix.needsUpdate = true;
+    haloMat.opacity = 0.14 * smooth((p - 0.55) / 0.3);
+    if (p >= 1) {
+      for (let i = 0; i < count; i++) {
+        scratch.p.set(cells[i].u, cells[i].v, 0);
+        scratch.s.setScalar(1);
+        scratch.m.compose(scratch.p, scratch.q, scratch.s);
+        im.setMatrixAt(i, scratch.m);
+      }
+      im.instanceMatrix.needsUpdate = true;
+      haloMat.opacity = 0.14;
+      builtRef.current = true;
+    }
   });
 
   return (
     <group ref={groupRef} position={SUN_POS} renderOrder={-2}>
-      {/* soft halo, just behind the disc */}
-      <mesh geometry={haloGeo} material={haloMat} position={[0, 0, 0.25]} renderOrder={-3} />
-      {cells.map((cell, i) => (
-        <mesh key={i} geometry={cubeGeo} material={mats[cell.tier]} position={cell.pos} renderOrder={-2}>
-          <lineSegments geometry={edgeGeo} material={edgeMat} />
-        </mesh>
-      ))}
+      <mesh ref={haloRef} geometry={haloGeo} material={haloMat} position={[0, 0, 0.25]} renderOrder={-3} />
+      <instancedMesh ref={meshRef} args={[cubeGeo, cubeMat, count]} renderOrder={-2} frustumCulled={false} />
     </group>
   );
 }
