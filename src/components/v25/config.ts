@@ -126,12 +126,12 @@ export const COLORS = {
   pitonLo: '#736D62', // lower / shadowed rock near the water
   pitonCrown: ['#4E9A6B', '#3E7E57'] as const, // small green vegetation crown
 
-  // Voxel COCONUTS (v25) — Option A "deep coconut brown", a touch darker/richer
-  // than the trunk so the nuts read as fruit (not blending into the trunk), with
-  // a subtle pale tan patch. Varied nut-to-nut. (Options B/C in the reply.)
-  coconut: '#5A3D22', // main nut — deep rich brown
-  coconutDark: '#46301B', // shadowed nut blocks
-  coconutTan: '#A07A4E', // subtle pale patch (classic coconut look)
+  // Voxel COCONUTS (v25) — Option A "deep coconut brown", clearly darker/richer
+  // than the (golden) trunk so the nuts stand out as fruit against the trunk and
+  // the green fronds, with a visible pale tan patch. Varied nut-to-nut.
+  coconut: '#5C3A1E', // main nut — deep rich brown
+  coconutDark: '#43290F', // shadowed nut blocks
+  coconutTan: '#C29A6A', // pale tan patch (classic coconut look)
 };
 
 // Six services. Anchors are a *subset* of the full vertex field, marked
