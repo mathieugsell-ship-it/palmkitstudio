@@ -126,14 +126,14 @@ export const COLORS = {
   pitonLo: '#736D62', // lower / shadowed rock near the water
   pitonCrown: ['#4E9A6B', '#3E7E57'] as const, // small green vegetation crown
 
-  // Voxel SUN (v26) — Option A "warm peach-gold dawn". Warm-white core easing to
-  // peach then a paler warm edge; soft halo + warm-white thin edges. Luminous but
-  // soft (no harsh bloom). (Options B/C in the reply.)
-  sunCore: '#FFF4E2', // warm-white core
-  sunMid: '#FFD3A8', // peach-gold mid
-  sunEdge: '#FFE7CC', // paler warm edge
-  sunHalo: '#FFDFB8', // soft halo glow
-  sunEdgeLine: '#FFEAD2', // thin warm-white voxel edges
+  // Voxel SUN (v26) — Option A "golden core". A vivid golden-yellow core that
+  // clearly stands out from the pale-peach dawn, easing to a softer warm rim.
+  // (Options B/C in the reply.) Luminous but soft (no harsh bloom).
+  sunCore: '#FFC247', // vivid golden-yellow core (stands out from the dawn)
+  sunMid: '#FFD98A', // softer amber toward the disc edge
+  sunEdge: '#FFE7C0', // pale warm rim / rays
+  sunHalo: '#FFCE73', // warm golden halo glow
+  sunEdgeLine: '#FFEAD2', // (unused now — kept for config compatibility)
 };
 
 // Six services. Anchors are a *subset* of the full vertex field, marked

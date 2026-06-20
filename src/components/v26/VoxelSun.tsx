@@ -15,6 +15,7 @@ import type { PalmConfig } from './config';
 const SUN_POS: [number, number, number] = [-10, 0.6, -11];
 const SUN_R = 1.85; // world radius — big enough to read, still modest
 const CELL = 0.46; // chunky voxel cell
+const HALO_OPACITY = 0.18; // soft warm glow around the disc
 
 const smooth = (x: number) => {
   const c = x < 0 ? 0 : x > 1 ? 1 : x;
@@ -97,7 +98,7 @@ export function VoxelSun({ config, reducedMotion }: { config: PalmConfig; reduce
       im.setMatrixAt(i, scratch.m);
     }
     im.instanceMatrix.needsUpdate = true;
-    haloMat.opacity = full ? 0.14 : 0;
+    haloMat.opacity = full ? HALO_OPACITY : 0;
   }, [cells, count, reducedMotion, scratch, haloMat]);
 
   useEffect(
@@ -128,7 +129,7 @@ export function VoxelSun({ config, reducedMotion }: { config: PalmConfig; reduce
       im.setMatrixAt(i, scratch.m);
     }
     im.instanceMatrix.needsUpdate = true;
-    haloMat.opacity = 0.14 * smooth((p - 0.55) / 0.3);
+    haloMat.opacity = HALO_OPACITY * smooth((p - 0.55) / 0.3);
     if (p >= 1) {
       for (let i = 0; i < count; i++) {
         scratch.p.set(cells[i].u, cells[i].v, 0);
@@ -137,7 +138,7 @@ export function VoxelSun({ config, reducedMotion }: { config: PalmConfig; reduce
         im.setMatrixAt(i, scratch.m);
       }
       im.instanceMatrix.needsUpdate = true;
-      haloMat.opacity = 0.14;
+      haloMat.opacity = HALO_OPACITY;
       builtRef.current = true;
     }
   });
