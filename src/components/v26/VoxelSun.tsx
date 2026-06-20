@@ -1,19 +1,18 @@
-// Voxel SUN on the horizon (scenery, v26). A REAL 3D voxel object — a chunky
-// ball of full-depth cubes with lit faces (MeshStandard + flatShading, so it
-// catches the dawn light and shows facet relief like the palm/rocks), the same
-// thin settle edges, and a warm golden albedo + gentle emissive so it reads as a
-// glowing sun that belongs to the same world (not a flat sprite). It builds in
-// with the scene (edges trace → faces fill, blocks grow centre→out). Sits low,
-// center-left, far back. Static once built. No glowing teal nodes. Maps to Growth.
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+// The SUN (scenery, v26). Deliberately NOT a voxel: a sun is light, not matter,
+// so blocks never read (flat → candy, solid → a cube). Instead it's the one
+// luminous element in the voxel world — a soft, round glowing disc: a warm
+// golden core easing out into a gentle halo, billboarded low on the LEFT
+// horizon behind the scene. That light-vs-blocks contrast is the point; it
+// reads instantly as a sun and anchors the warm side of the dawn. It fades in
+// with the build, then holds. Modest, tasteful, no harsh neon. Maps to Growth.
+import { useEffect, useMemo, useRef } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { PalmConfig } from './config';
 
-// Placement (tunable): low on the horizon, center-left, far back behind the sea.
-const SUN_POS: [number, number, number] = [-10, 0.8, -11];
-const SUN_R = 1.5; // world radius — modest
-const CELL = 0.6; // chunky voxel cell (real cube, full depth)
+// Placement (tunable): low on the horizon, left, far back behind the sea.
+const SUN_POS: [number, number, number] = [-9.5, 1.0, -11];
+const PLANE = 5.4; // billboard size — the glow halo reaches the plane edge (transparent)
 
 const smooth = (x: number) => {
   const c = x < 0 ? 0 : x > 1 ? 1 : x;
@@ -23,116 +22,75 @@ const smooth = (x: number) => {
 export function VoxelSun({ config, reducedMotion }: { config: PalmConfig; reducedMotion: boolean }) {
   const c = config.colors;
   const duration = config.build.duration;
-  const FACE_OPACITY = 0.96;
-  const EDGE_OPACITY = 0.6;
+  const { camera } = useThree();
 
-  // Voxel ball: filled cubes within the radius (a real 3-D sphere of blocks).
-  // tier 0 = brighter core, tier 1 = warmer rim; o01 = reveal order (centre→out).
-  const cells = useMemo(() => {
-    const out: { pos: [number, number, number]; tier: number; o01: number }[] = [];
-    const m = Math.ceil(SUN_R / CELL);
-    for (let i = -m; i <= m; i++)
-      for (let j = -m; j <= m; j++)
-        for (let k = -m; k <= m; k++) {
-          const u = i * CELL;
-          const v = j * CELL;
-          const w = k * CELL;
-          const r = Math.hypot(u, v, w);
-          if (r > SUN_R) continue;
-          out.push({ pos: [u, v, w], tier: r < SUN_R * 0.52 ? 0 : 1, o01: r / SUN_R });
-        }
-    return out;
-  }, []);
+  // Soft radial sun: a defined warm core disc easing out into a transparent
+  // halo. One smooth gradient — no blocks, no internal pattern, no hard rim.
+  const texture = useMemo(() => {
+    const S = 256;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = S;
+    const ctx = cv.getContext('2d')!;
+    const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    const core = new THREE.Color(c.sunCore);
+    const mid = new THREE.Color(c.sunMid);
+    const halo = new THREE.Color(c.sunHalo);
+    const rgba = (col: THREE.Color, a: number) =>
+      `rgba(${Math.round(col.r * 255)},${Math.round(col.g * 255)},${Math.round(col.b * 255)},${a})`;
+    // Solid-ish core out to ~0.32, soft disc edge, then a long gentle halo tail.
+    g.addColorStop(0.0, rgba(core, 1.0));
+    g.addColorStop(0.26, rgba(core, 0.97));
+    g.addColorStop(0.36, rgba(mid, 0.78)); // disc shoulder
+    g.addColorStop(0.46, rgba(mid, 0.34)); // soft outer edge of the disc
+    g.addColorStop(0.66, rgba(halo, 0.12)); // halo
+    g.addColorStop(0.85, rgba(halo, 0.03));
+    g.addColorStop(1.0, rgba(halo, 0.0)); // fully transparent at the plane edge
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, S, S);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }, [c.sunCore, c.sunMid, c.sunHalo]);
 
-  const cubeGeo = useMemo(() => new THREE.BoxGeometry(CELL * 0.97, CELL * 0.97, CELL * 0.97), []);
-  const edgeGeo = useMemo(() => new THREE.EdgesGeometry(cubeGeo, 15), [cubeGeo]);
-  const faceMats = useMemo(
+  const geo = useMemo(() => new THREE.PlaneGeometry(PLANE, PLANE), []);
+  const mat = useMemo(
     () =>
-      [
-        { col: c.sunCore, emi: 0.5 },
-        { col: c.sunMid, emi: 0.36 },
-      ].map(
-        (t) =>
-          new THREE.MeshStandardMaterial({
-            color: new THREE.Color(t.col),
-            emissive: new THREE.Color(t.col),
-            emissiveIntensity: t.emi, // gentle self-glow on top of the lighting
-            flatShading: true,
-            metalness: 0,
-            roughness: 0.7,
-            transparent: true,
-            opacity: reducedMotion ? FACE_OPACITY : 0,
-            depthWrite: false,
-          }),
-      ),
-    [c.sunCore, c.sunMid, reducedMotion],
-  );
-  const edgeMat = useMemo(
-    () =>
-      new THREE.LineBasicMaterial({
-        color: new THREE.Color(c.edgeFinal), // same thin settle edges as the scene
-        toneMapped: false,
+      new THREE.MeshBasicMaterial({
+        map: texture,
         transparent: true,
-        opacity: reducedMotion ? EDGE_OPACITY : 0,
+        depthWrite: false,
+        toneMapped: false, // stays luminous (it's the light, not a lit surface)
+        opacity: reducedMotion ? 1 : 0,
       }),
-    [c.edgeFinal, reducedMotion],
+    [texture, reducedMotion],
   );
 
-  const meshRefs = useRef<(THREE.Mesh | null)[]>([]);
+  const meshRef = useRef<THREE.Mesh>(null);
   const elapsed = useRef(reducedMotion ? duration : 0);
   const builtRef = useRef(reducedMotion);
 
   useEffect(
     () => () => {
-      cubeGeo.dispose();
-      edgeGeo.dispose();
-      faceMats.forEach((m) => m.dispose());
-      edgeMat.dispose();
+      geo.dispose();
+      mat.dispose();
+      texture.dispose();
     },
-    [cubeGeo, edgeGeo, faceMats, edgeMat],
+    [geo, mat, texture],
   );
 
-  useLayoutEffect(() => {
-    for (const mesh of meshRefs.current) mesh?.scale.setScalar(reducedMotion ? 1 : 0.0001);
-  }, [reducedMotion, cells]);
-
   useFrame((_, delta) => {
+    // Always billboard toward the camera so the disc stays perfectly round.
+    if (meshRef.current) meshRef.current.quaternion.copy(camera.quaternion);
     if (builtRef.current) return;
     elapsed.current += delta;
     const p = Math.min(elapsed.current / duration, 1);
-    const win = 0.16;
-    // Edges trace in first, then the faces fill (echoing the scene's build).
-    edgeMat.opacity = smooth((p - 0.42) / 0.2) * EDGE_OPACITY;
-    const fo = smooth((p - 0.52) / 0.26) * FACE_OPACITY;
-    faceMats.forEach((m) => (m.opacity = fo));
-    for (let i = 0; i < cells.length; i++) {
-      const s = smooth((p - (0.45 + 0.3 * cells[i].o01)) / win); // grow centre→out
-      meshRefs.current[i]?.scale.setScalar(Math.max(s, 0.0001));
-    }
+    // Glow swells in gently with the world, a touch after the edges start.
+    mat.opacity = smooth((p - 0.4) / 0.34);
     if (p >= 1) {
-      for (const mesh of meshRefs.current) mesh?.scale.setScalar(1);
-      faceMats.forEach((m) => (m.opacity = FACE_OPACITY));
-      edgeMat.opacity = EDGE_OPACITY;
+      mat.opacity = 1;
       builtRef.current = true;
     }
   });
 
-  return (
-    <group position={SUN_POS}>
-      {cells.map((cell, i) => (
-        <mesh
-          key={i}
-          ref={(el) => {
-            meshRefs.current[i] = el;
-          }}
-          geometry={cubeGeo}
-          material={faceMats[cell.tier]}
-          position={cell.pos}
-          scale={0.0001}
-        >
-          <lineSegments geometry={edgeGeo} material={edgeMat} />
-        </mesh>
-      ))}
-    </group>
-  );
+  return <mesh ref={meshRef} geometry={geo} material={mat} position={SUN_POS} />;
 }
