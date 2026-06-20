@@ -107,12 +107,13 @@ function DawnBackground({ colors }: { colors: PalmConfig['colors'] }) {
     sky.addColorStop(1, colors.skyWarm);
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, w, h);
-    // Sun halo: warm core low-left (20%/88%), elliptical (60%×52%), easing to
-    // transparent peach by 60% — no hard disc. Scale the context to get the
-    // ellipse from a unit-circle radial gradient.
+    // Sun halo: the dawn light EMANATES FROM THE SUN — the warm core is centered
+    // on the sun's screen position (~30%/27%, upper-left), elliptical (66%×60%),
+    // easing to transparent peach by 60% — no hard disc. Scale the context to get
+    // the ellipse from a unit-circle radial gradient.
     ctx.save();
-    ctx.translate(0.2 * w, 0.88 * h);
-    ctx.scale(0.6 * w, 0.52 * h);
+    ctx.translate(0.3 * w, 0.27 * h);
+    ctx.scale(0.66 * w, 0.6 * h);
     const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
     halo.addColorStop(0, colors.haloCore);
     halo.addColorStop(0.26, rgba(colors.haloMid, 0.55));
@@ -212,8 +213,9 @@ export default function PalmTreeHero({ config = DEFAULT_CONFIG }: { config?: Pal
       return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
     };
     return [
-      // Sun halo: warm core low-left, easing to transparent peach (no hard disc).
-      `radial-gradient(60% 52% at 20% 88%, ${c.haloCore} 0%, ${rgba(c.haloMid, 0.55)} 26%, ${rgba(c.haloMid, 0)} 60%)`,
+      // Sun halo: centered on the sun (upper-left), so the dawn glow radiates
+      // from it; easing to transparent peach (no hard disc).
+      `radial-gradient(66% 60% at 30% 27%, ${c.haloCore} 0%, ${rgba(c.haloMid, 0.55)} 26%, ${rgba(c.haloMid, 0)} 60%)`,
       // Sky: near-white top, gentle warm wash toward the bottom.
       `linear-gradient(180deg, ${c.skyTop} 0%, ${c.skyTop} 50%, ${c.skyWarm} 100%)`,
     ].join(', ');

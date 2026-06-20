@@ -10,8 +10,9 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { PalmConfig } from './config';
 
-// Placement (tunable): low on the horizon, left, far back behind the sea.
-const SUN_POS: [number, number, number] = [-9.5, 1.0, -11];
+// Placement (tunable): low on the horizon, well to the LEFT (clear of the palm
+// fronds), far back behind the sea.
+const SUN_POS: [number, number, number] = [-13, 1.0, -11];
 const PLANE = 5.4; // billboard size — the glow halo reaches the plane edge (transparent)
 
 const smooth = (x: number) => {
