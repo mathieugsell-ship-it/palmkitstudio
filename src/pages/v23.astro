@@ -1,0 +1,32 @@
+---
+// Voxel v23 — copied from v22. ONE change: the back edge of the water is rounded
+// into a circular ARC (centred on the islet) so the far water curves like a
+// circle behind the islet + pitons. The FRONT is untouched (no cubes added in
+// front). Depth perspective (cells shrink toward the back) and depth-darkening
+// are kept exactly from v22. No interactivity/UI; rotation paused.
+import '../styles/global.css';
+import PalmTreeHero from '../components/v23/PalmTreeHero.tsx';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Voxel v23</title>
+    <meta name="description" content="Palmkit Studio — voxel Andaman scene: water with a rounded circular back edge." />
+  </head>
+  <body>
+    <main class="h-screen w-screen overflow-hidden">
+      <PalmTreeHero client:only="react" />
+      <a
+        href="/versions"
+        class="fixed bottom-4 right-4 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-600 no-underline backdrop-blur-sm transition-colors hover:text-neutral-900"
+        >← All versions</a
+      >
+    </main>
+    <style is:global>
+      html, body { margin: 0; padding: 0; background: #fbfcfd; }
+    </style>
+  </body>
+</html>
