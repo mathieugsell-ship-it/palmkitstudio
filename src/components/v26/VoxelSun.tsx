@@ -1,21 +1,19 @@
-// Voxel SUN on the horizon (scenery, v26). A clean, solid filled blocky DISC
-// that reads as a soft warm sun — no internal cross/grid pattern: one instanced
-// mesh, smooth warm gradient (brighter core → peach edge), a few short ray
-// blocks around the rim, and a faint soft halo. Flat UNLIT (it's a light source)
-// so it glows softly against the dawn without harsh bloom. Billboarded to face
-// the camera (stays round, re-faces under the mobile CameraRig). It BUILDS IN
-// with the scene — its blocks assemble from points outward over the build
-// window — instead of popping in pre-made. Static once built. Maps to Growth.
+// Voxel SUN on the horizon (scenery, v26). A REAL 3D voxel object — a chunky
+// ball of full-depth cubes with lit faces (MeshStandard + flatShading, so it
+// catches the dawn light and shows facet relief like the palm/rocks), the same
+// thin settle edges, and a warm golden albedo + gentle emissive so it reads as a
+// glowing sun that belongs to the same world (not a flat sprite). It builds in
+// with the scene (edges trace → faces fill, blocks grow centre→out). Sits low,
+// center-left, far back. Static once built. No glowing teal nodes. Maps to Growth.
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { PalmConfig } from './config';
 
 // Placement (tunable): low on the horizon, center-left, far back behind the sea.
-const SUN_POS: [number, number, number] = [-10, 0.6, -11];
-const SUN_R = 1.85; // world radius — big enough to read, still modest
-const CELL = 0.46; // chunky voxel cell
-const HALO_OPACITY = 0.18; // soft warm glow around the disc
+const SUN_POS: [number, number, number] = [-10, 0.8, -11];
+const SUN_R = 1.5; // world radius — modest
+const CELL = 0.6; // chunky voxel cell (real cube, full depth)
 
 const smooth = (x: number) => {
   const c = x < 0 ? 0 : x > 1 ? 1 : x;
@@ -24,129 +22,117 @@ const smooth = (x: number) => {
 
 export function VoxelSun({ config, reducedMotion }: { config: PalmConfig; reducedMotion: boolean }) {
   const c = config.colors;
-  const groupRef = useRef<THREE.Group>(null);
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const haloRef = useRef<THREE.Mesh>(null);
-  const camera = useThree((s) => s.camera);
   const duration = config.build.duration;
+  const FACE_OPACITY = 0.96;
+  const EDGE_OPACITY = 0.6;
 
-  // Blocks: the filled disc + a few short rim rays. Each gets a smooth warm
-  // colour (no hard tiers → no cross) and a staggered reveal (centre → out).
+  // Voxel ball: filled cubes within the radius (a real 3-D sphere of blocks).
+  // tier 0 = brighter core, tier 1 = warmer rim; o01 = reveal order (centre→out).
   const cells = useMemo(() => {
-    const core = new THREE.Color(c.sunCore);
-    const mid = new THREE.Color(c.sunMid);
-    const edge = new THREE.Color(c.sunEdge);
-    const out: { u: number; v: number; color: THREE.Color; reveal: number }[] = [];
+    const out: { pos: [number, number, number]; tier: number; o01: number }[] = [];
     const m = Math.ceil(SUN_R / CELL);
     for (let i = -m; i <= m; i++)
-      for (let j = -m; j <= m; j++) {
-        const u = i * CELL;
-        const v = j * CELL;
-        const r = Math.hypot(u, v);
-        if (r > SUN_R - CELL * 0.25) continue; // blocky circle
-        const t = r / SUN_R;
-        const col = core.clone().lerp(mid, smooth(t)); // smooth, brighter core
-        out.push({ u, v, color: col, reveal: 0.45 + 0.4 * t });
-      }
-    // short rim rays (8 directions)
-    for (let k = 0; k < 8; k++) {
-      const a = (k / 8) * Math.PI * 2;
-      const rr = SUN_R + CELL * 0.55;
-      out.push({ u: rr * Math.cos(a), v: rr * Math.sin(a), color: edge.clone(), reveal: 0.86 });
-    }
+      for (let j = -m; j <= m; j++)
+        for (let k = -m; k <= m; k++) {
+          const u = i * CELL;
+          const v = j * CELL;
+          const w = k * CELL;
+          const r = Math.hypot(u, v, w);
+          if (r > SUN_R) continue;
+          out.push({ pos: [u, v, w], tier: r < SUN_R * 0.52 ? 0 : 1, o01: r / SUN_R });
+        }
     return out;
-  }, [c.sunCore, c.sunMid, c.sunEdge]);
+  }, []);
 
-  const count = cells.length;
-  const cubeGeo = useMemo(() => new THREE.BoxGeometry(CELL * 0.99, CELL * 0.99, CELL * 0.5), []);
-  const cubeMat = useMemo(
-    () => new THREE.MeshBasicMaterial({ toneMapped: false, transparent: true, opacity: 0.95, side: THREE.DoubleSide }),
-    [],
-  );
-  const haloGeo = useMemo(() => new THREE.CircleGeometry(SUN_R * 1.6, 40), []);
-  const haloMat = useMemo(
+  const cubeGeo = useMemo(() => new THREE.BoxGeometry(CELL * 0.97, CELL * 0.97, CELL * 0.97), []);
+  const edgeGeo = useMemo(() => new THREE.EdgesGeometry(cubeGeo, 15), [cubeGeo]);
+  const faceMats = useMemo(
     () =>
-      new THREE.MeshBasicMaterial({
-        color: new THREE.Color(c.sunHalo),
+      [
+        { col: c.sunCore, emi: 0.5 },
+        { col: c.sunMid, emi: 0.36 },
+      ].map(
+        (t) =>
+          new THREE.MeshStandardMaterial({
+            color: new THREE.Color(t.col),
+            emissive: new THREE.Color(t.col),
+            emissiveIntensity: t.emi, // gentle self-glow on top of the lighting
+            flatShading: true,
+            metalness: 0,
+            roughness: 0.7,
+            transparent: true,
+            opacity: reducedMotion ? FACE_OPACITY : 0,
+            depthWrite: false,
+          }),
+      ),
+    [c.sunCore, c.sunMid, reducedMotion],
+  );
+  const edgeMat = useMemo(
+    () =>
+      new THREE.LineBasicMaterial({
+        color: new THREE.Color(c.edgeFinal), // same thin settle edges as the scene
         toneMapped: false,
         transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        side: THREE.DoubleSide,
+        opacity: reducedMotion ? EDGE_OPACITY : 0,
       }),
-    [c.sunHalo],
+    [c.edgeFinal, reducedMotion],
   );
 
-  const scratch = useMemo(
-    () => ({ m: new THREE.Matrix4(), p: new THREE.Vector3(), q: new THREE.Quaternion(), s: new THREE.Vector3() }),
-    [],
-  );
+  const meshRefs = useRef<(THREE.Mesh | null)[]>([]);
   const elapsed = useRef(reducedMotion ? duration : 0);
   const builtRef = useRef(reducedMotion);
-
-  // Colours once; initial matrices (full if reduced-motion, else collapsed).
-  useLayoutEffect(() => {
-    const im = meshRef.current;
-    if (!im) return;
-    for (let i = 0; i < count; i++) im.setColorAt(i, cells[i].color);
-    if (im.instanceColor) im.instanceColor.needsUpdate = true;
-    const full = reducedMotion;
-    for (let i = 0; i < count; i++) {
-      scratch.p.set(cells[i].u, cells[i].v, 0);
-      scratch.s.setScalar(full ? 1 : 0.0001);
-      scratch.m.compose(scratch.p, scratch.q, scratch.s);
-      im.setMatrixAt(i, scratch.m);
-    }
-    im.instanceMatrix.needsUpdate = true;
-    haloMat.opacity = full ? HALO_OPACITY : 0;
-  }, [cells, count, reducedMotion, scratch, haloMat]);
 
   useEffect(
     () => () => {
       cubeGeo.dispose();
-      cubeMat.dispose();
-      haloGeo.dispose();
-      haloMat.dispose();
+      edgeGeo.dispose();
+      faceMats.forEach((m) => m.dispose());
+      edgeMat.dispose();
     },
-    [cubeGeo, cubeMat, haloGeo, haloMat],
+    [cubeGeo, edgeGeo, faceMats, edgeMat],
   );
 
-  useFrame((_, delta) => {
-    // Billboard: always face the camera (round, re-faces under CameraRig).
-    if (groupRef.current) groupRef.current.lookAt(camera.position);
+  useLayoutEffect(() => {
+    for (const mesh of meshRefs.current) mesh?.scale.setScalar(reducedMotion ? 1 : 0.0001);
+  }, [reducedMotion, cells]);
 
+  useFrame((_, delta) => {
     if (builtRef.current) return;
-    const im = meshRef.current;
-    if (!im) return;
     elapsed.current += delta;
     const p = Math.min(elapsed.current / duration, 1);
     const win = 0.16;
-    for (let i = 0; i < count; i++) {
-      const s = smooth((p - cells[i].reveal) / win); // grows from a point → full
-      scratch.p.set(cells[i].u, cells[i].v, 0);
-      scratch.s.setScalar(Math.max(s, 0.0001));
-      scratch.m.compose(scratch.p, scratch.q, scratch.s);
-      im.setMatrixAt(i, scratch.m);
+    // Edges trace in first, then the faces fill (echoing the scene's build).
+    edgeMat.opacity = smooth((p - 0.42) / 0.2) * EDGE_OPACITY;
+    const fo = smooth((p - 0.52) / 0.26) * FACE_OPACITY;
+    faceMats.forEach((m) => (m.opacity = fo));
+    for (let i = 0; i < cells.length; i++) {
+      const s = smooth((p - (0.45 + 0.3 * cells[i].o01)) / win); // grow centre→out
+      meshRefs.current[i]?.scale.setScalar(Math.max(s, 0.0001));
     }
-    im.instanceMatrix.needsUpdate = true;
-    haloMat.opacity = HALO_OPACITY * smooth((p - 0.55) / 0.3);
     if (p >= 1) {
-      for (let i = 0; i < count; i++) {
-        scratch.p.set(cells[i].u, cells[i].v, 0);
-        scratch.s.setScalar(1);
-        scratch.m.compose(scratch.p, scratch.q, scratch.s);
-        im.setMatrixAt(i, scratch.m);
-      }
-      im.instanceMatrix.needsUpdate = true;
-      haloMat.opacity = HALO_OPACITY;
+      for (const mesh of meshRefs.current) mesh?.scale.setScalar(1);
+      faceMats.forEach((m) => (m.opacity = FACE_OPACITY));
+      edgeMat.opacity = EDGE_OPACITY;
       builtRef.current = true;
     }
   });
 
   return (
-    <group ref={groupRef} position={SUN_POS} renderOrder={-2}>
-      <mesh ref={haloRef} geometry={haloGeo} material={haloMat} position={[0, 0, 0.25]} renderOrder={-3} />
-      <instancedMesh ref={meshRef} args={[cubeGeo, cubeMat, count]} renderOrder={-2} frustumCulled={false} />
+    <group position={SUN_POS}>
+      {cells.map((cell, i) => (
+        <mesh
+          key={i}
+          ref={(el) => {
+            meshRefs.current[i] = el;
+          }}
+          geometry={cubeGeo}
+          material={faceMats[cell.tier]}
+          position={cell.pos}
+          scale={0.0001}
+        >
+          <lineSegments geometry={edgeGeo} material={edgeMat} />
+        </mesh>
+      ))}
     </group>
   );
 }
