@@ -45,18 +45,34 @@ function edgeOf(hex: string): string {
 
 // ---- island form ----------------------------------------------------------
 export const CELL = 0.5; // voxel footprint (shared with the water grid)
-export const R = 1.36; // island radius
+export const R = 1.6; // island base radius (grown from 1.36 so the islet fills more sea)
 const SAND_THK = 0.34;
 const DOME = 0.28; // how much the sand top drops from centre to rim (rounded mound)
+// Asymmetric growth: the base disc grows modestly all round (the palm stays
+// well interior, not at an edge), PLUS a broad BULGE toward the screen BACK-LEFT
+// — world −x, which the front-right camera projects to the upper-left — where
+// the sea sat empty. The outer WATER edge is decoupled (waterLayout keeps its
+// own fixed island reference), so growing the island here eats into that empty
+// water without moving the sea's outline / back arc / perspective.
+const BULGE = 1.7; // extra reach toward the back-left
+const BULGE_DIR = Math.PI; // world −x ≈ screen back-left
 // Lobed, slightly-irregular outline so the rim reads organic, not circular.
 // Exported so the water grid can exclude land cells and meet the shore exactly.
-export const outlineR = (theta: number) =>
-  R * (1 + 0.11 * Math.sin(3 * theta + 0.6) + 0.06 * Math.sin(5 * theta + 1.3));
+export const outlineR = (theta: number) => {
+  const lobes = 0.11 * Math.sin(3 * theta + 0.6) + 0.06 * Math.sin(5 * theta + 1.3);
+  // One-sided smooth bulge (cos² falloff), with a little extra wobble so the
+  // extended side stays organic rather than a clean circular arc.
+  const dth = Math.atan2(Math.sin(theta - BULGE_DIR), Math.cos(theta - BULGE_DIR));
+  const bulge = BULGE * Math.pow(Math.max(0, Math.cos(dth)), 2) * (1 + 0.08 * Math.sin(4 * theta + 0.9));
+  return R * (1 + lobes) + bulge;
+};
 
 export function buildIsland(config: PalmConfig): IslandModel {
   const c = config.colors;
   const blocks: IslandBlock[] = [];
-  const N = Math.ceil((R * 1.3) / CELL);
+  // Cover the full reach (base disc + the back-left bulge); cells beyond the
+  // local outline are skipped below.
+  const N = Math.ceil((R * 1.25 + BULGE) / CELL);
   let n = 0;
 
   for (let ix = -N; ix <= N; ix++) {
@@ -65,8 +81,11 @@ export function buildIsland(config: PalmConfig): IslandModel {
       const z = iz * CELL;
       const d = Math.hypot(x, z);
       const theta = Math.atan2(z, x);
-      if (d > outlineR(theta)) continue;
-      const nd = Math.min(d / R, 1);
+      const rim = outlineR(theta);
+      if (d > rim) continue;
+      // Normalize by the LOCAL rim so the dome + underside taper scale to the
+      // bigger, bulged island (centre stays high → palm still plants at y≈0).
+      const nd = Math.min(d / rim, 1);
       const seed = ix * 73 + iz * 31 + 100;
 
       // Domed mound + a touch of stepped irregularity on the top.

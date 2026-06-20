@@ -54,8 +54,16 @@ const RING_MIN = 2.9; // water margin beyond the shore — wide enough to keep t
 //                       larger foreground longtail fully on the water (+ karst
 //                       rocks to come). Tune down to shrink the sea.
 const RING_VAR = 0.24; // gentle outer irregularity
+// The outer sea edge is anchored to a FIXED island reference (the islet's
+// ORIGINAL outline), NOT the live island outlineR — so growing the island (it
+// now bulges back-left into the empty water) eats into the sea WITHOUT moving
+// the sea's outer shape / back arc / perspective. Land exclusion + the wet-sand
+// fringe below still use the live (enlarged) outlineR, so the shoreline hugs the
+// new, bigger island.
+const islandRef = (theta: number) =>
+  1.36 * (1 + 0.11 * Math.sin(3 * theta + 0.6) + 0.06 * Math.sin(5 * theta + 1.3));
 const waterOuter = (theta: number) =>
-  outlineR(theta) + RING_MIN + RING_VAR * (0.5 + 0.5 * Math.sin(2 * theta + 0.4));
+  islandRef(theta) + RING_MIN + RING_VAR * (0.5 + 0.5 * Math.sin(2 * theta + 0.4));
 
 export function buildWater(config: PalmConfig): WaterModel {
   const c = config.colors;
