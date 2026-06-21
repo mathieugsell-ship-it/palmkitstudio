@@ -1,0 +1,32 @@
+---
+// Voxel v32 — copied from v31. Two changes: (1) cruise ship made more solid,
+// smaller, and moved clearly back-LEFT under the sun; (2) a MODERATE opacity bump
+// on the solid faces (palm, island, boat, pitons, ship) so each object reads as a
+// solid volume instead of see-through mush — keeping a hint of translucency and
+// the thin white edges. Water opacity left as-is. Rotation paused.
+import '../styles/global.css';
+import PalmTreeHero from '../components/v32/PalmTreeHero.tsx';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Voxel v32</title>
+    <meta name="description" content="Palmkit Studio — voxel Andaman dawn; more solid faces and a smaller cruise ship clearly back-left under the sun." />
+  </head>
+  <body>
+    <main class="h-screen w-screen overflow-hidden">
+      <PalmTreeHero client:only="react" />
+      <a
+        href="/versions"
+        class="fixed bottom-4 right-4 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-600 no-underline backdrop-blur-sm transition-colors hover:text-neutral-900"
+        >← All versions</a
+      >
+    </main>
+    <style is:global>
+      html, body { margin: 0; padding: 0; background: #fbfcfd; }
+    </style>
+  </body>
+</html>
