@@ -1,0 +1,32 @@
+---
+// Voxel v39 — copied from v38. ONLY change: a global PALETTE refresh to
+// "Golden-Hour Andaman" (Option B) — vivid saturated turquoise water, golden
+// sand, lusher warm-green fronds, warm limestone pitons, a more golden dawn/sun,
+// boat warmed; the cruise ship stays cream/light with a teal-navy base echoing
+// the water. Colours only (config.ts); geometry/motion/layout all unchanged.
+import '../styles/global.css';
+import PalmTreeHero from '../components/v39/PalmTreeHero.tsx';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Voxel v39</title>
+    <meta name="description" content="Palmkit Studio — voxel Andaman dawn; vibrant Golden-Hour palette (turquoise water, golden sand)." />
+  </head>
+  <body>
+    <main class="h-screen w-screen overflow-hidden">
+      <PalmTreeHero client:only="react" />
+      <a
+        href="/versions"
+        class="fixed bottom-4 right-4 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-600 no-underline backdrop-blur-sm transition-colors hover:text-neutral-900"
+        >← All versions</a
+      >
+    </main>
+    <style is:global>
+      html, body { margin: 0; padding: 0; background: #fbfcfd; }
+    </style>
+  </body>
+</html>
