@@ -1,0 +1,33 @@
+---
+// Voxel v34 — copied from v33. ONLY change: a gentle atmospheric-DISTANCE
+// treatment on the cruise ship — it stays solid + readable, but its starkest
+// tone (the near-black navy base) is eased to a softer slate-blue and the haze is
+// nudged (opacity 0.99→0.96) so it reads a touch softer/less contrasty at
+// distance without becoming translucent. Shape + cream hull + coral funnels
+// unchanged. Everything else unchanged; rotation paused.
+import '../styles/global.css';
+import PalmTreeHero from '../components/v34/PalmTreeHero.tsx';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Palmkit Studio — Voxel v34</title>
+    <meta name="description" content="Palmkit Studio — voxel Andaman dawn; a clearly stacked cream cruise liner back-left under the sun." />
+  </head>
+  <body>
+    <main class="h-screen w-screen overflow-hidden">
+      <PalmTreeHero client:only="react" />
+      <a
+        href="/versions"
+        class="fixed bottom-4 right-4 z-10 rounded-md border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-600 no-underline backdrop-blur-sm transition-colors hover:text-neutral-900"
+        >← All versions</a
+      >
+    </main>
+    <style is:global>
+      html, body { margin: 0; padding: 0; background: #fbfcfd; }
+    </style>
+  </body>
+</html>
