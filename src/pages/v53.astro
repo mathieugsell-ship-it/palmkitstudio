@@ -1,0 +1,416 @@
+---
+// Voxel v53 — INTERACTIVITY A revised (copied from v52): replace the breathing
+// glow with always-visible service LABEL pins (drei <Html>) on each of the 4
+// objects (Websites / AI Automation / Local SEO / Growth). Discreet at rest,
+// intensify + teal glow on hover (desktop) / tap (mobile). Label text is
+// i18n-driven (EN passed as a prop from the JSON; the vanilla switcher swaps it
+// via data-i18n + a pk-relabel event when the labels mount). Hitboxes/detection
+// kept; tap still just identifies (no focus yet — part B).
+// ---------------------------------------------------------------------------
+// Voxel v52 — INTERACTIVITY part A (copied from v51): the 4 service objects
+// (palm/boat/pitons/ship) get a teal clickable glow + generous invisible
+// hitboxes + tap detection (logs/labels which object). NO focus transition yet
+// (part B). Glow + raycasting live in components/v52 (SceneBuild); this page just
+// lets pointer events reach the canvas (.hero-overlay pointer-events:none, real
+// controls re-enabled). Hero intro / scene / i18n all unchanged.
+// ---------------------------------------------------------------------------
+// Voxel v47 — HERO cinematic intro (copied from v46). Fixes the "everything
+// stacked at once" overlap by playing a short staged intro on first visit, then
+// settling into a clean, uncluttered resting state where nothing sits on the
+// palm/boat/pitons.
+//
+// Intro (first visit only): big centred HEADLINE → big SUBTITLE → then the chip
+// lands AND the scene builds. ~1.3s/step, skippable (scroll/tap/key), first-visit
+// flag in localStorage. Return visits + reduced-motion land on the rest state
+// instantly. The scene build is GATED via window.__pkHero (held invisible until
+// the chip step) — the React island reads/subscribes to it (see PalmTreeHero/
+// SceneBuild `gate`).
+//
+// Rest state: scene + discreet chip + COMPACT headline (top band, clear of the
+// palm) + CTA (thumb zone) + EN/FR/TH switcher. The long subtitle is dropped at
+// rest (it had its moment in the intro). All copy stays in src/i18n/*.json.
+import '../styles/global.css';
+import PalmTreeHero from '../components/v53/PalmTreeHero.tsx';
+import en from '../i18n/v53/en.json';
+import fr from '../i18n/v53/fr.json';
+import th from '../i18n/v53/th.json';
+
+const i18n = { en, fr, th };
+const t = en; // server-render the EN copy for instant first paint + SEO
+
+type Svc = { name: string; desc: string };
+const langs = ['en', 'fr', 'th'] as const;
+const svcKeys = ['websites', 'ai', 'seo', 'growth'] as const;
+const services = t.services as Record<string, Svc>;
+const svc = svcKeys.map((key, i) => ({ key, num: String(i + 1).padStart(2, '0'), ...services[key] }));
+// EN service names (from the JSON, not hardcoded) → initial 3D label text; the
+// vanilla switcher swaps them by language on mount (pk-relabel) + on click.
+const heroLabels = {
+  palm: services.websites.name, boat: services.ai.name, piton: services.seo.name, ship: services.growth.name,
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Palmkit Studio. Faster. Further. For less.</title>
+    <meta name="description" content="A web & AI studio from Phuket. Faster, further, for less. Websites, growth & automation." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Pre-paint: decide intro vs rest (no FOUC) + seed the scene-build gate +
+         force a top-of-page start (no restored scroll / no #services anchor jump). -->
+    <script is:inline>
+      (function () {
+        try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
+        // a fresh load should always start at the top of the hero, never at #services
+        if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }
+        var reduce = false;
+        try { reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+        var play = !reduce; // play the intro on EVERY load (no first-visit flag)
+        window.__pkHero = { mode: play ? 'hold' : 'instant', notify: null };
+        document.documentElement.setAttribute('data-hero', play ? 'intro-1' : 'rest');
+      })();
+    </script>
+  </head>
+  <body>
+    <!-- ===================== HERO ===================== -->
+    <section class="hero">
+      <div class="hero-dawn" aria-hidden="true"></div>
+      <div class="hero-canvas"><PalmTreeHero client:only="react" labels={heroLabels} /></div>
+      <div class="hero-scrim" aria-hidden="true"></div>
+
+      <!-- INTRO: big centred text, staged (plays every load). The subtitle carries
+           <strong> emphasis, so it uses set:html / data-i18n-html (switcher swaps
+           innerHTML for those). The 3rd step is a centred "From Phuket" that blooms
+           in WITH the scene then cross-fades out as the build completes. -->
+      <div class="intro" aria-hidden="true">
+        <div class="intro-line intro-headline" data-i18n="headline">{t.headline}</div>
+        <div class="intro-line intro-subtitle" data-i18n-html="subtitle" set:html={t.subtitle}></div>
+        <div class="intro-line intro-chip" data-i18n="chip">{t.chip}</div>
+      </div>
+
+      <!-- REST: clean overlay, text in top/bottom bands (no overlap with the palm) -->
+      <div class="hero-overlay">
+        <header class="hero-top">
+          <span class="chip" data-i18n="chip">{t.chip}</span>
+          <nav class="lang" aria-label="Language">
+            {
+              langs.map((code) => (
+                <button type="button" class="lang-btn" data-lang-btn={code} aria-pressed={code === 'en' ? 'true' : 'false'}>
+                  {i18n[code].langName}
+                </button>
+              ))
+            }
+          </nav>
+        </header>
+
+        <h1 class="headline-compact" data-i18n="headline">{t.headline}</h1>
+
+        <div class="hero-foot">
+          <button type="button" class="cta" data-cta data-i18n="cta">{t.cta}</button>
+          <button type="button" class="scroll-cue" data-cta aria-label={t.scrollCue}>
+            <span class="chev" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SERVICES ===================== -->
+    <section id="services" class="services">
+      <div class="services-inner">
+        <h2 class="services-title" data-i18n="servicesTitle">{t.servicesTitle}</h2>
+        <ul class="cards">
+          {
+            svc.map((s) => (
+              <li class="card">
+                <span class="card-num">{s.num}</span>
+                <h3 class="card-name" data-i18n={`services.${s.key}.name`}>{s.name}</h3>
+                <p class="card-desc" data-i18n={`services.${s.key}.desc`}>{s.desc}</p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </section>
+
+    <a href="/versions" class="versions-link">← All versions</a>
+
+    <script define:vars={{ i18n }}>
+      const html = document.documentElement;
+
+      // ---- always start at the TOP of the hero on a fresh load ----------------
+      window.scrollTo(0, 0);
+      window.addEventListener('load', function () { window.scrollTo(0, 0); });
+
+      // ---- i18n switcher: swap [data-i18n] text from the inlined dicts --------
+      const resolve = (dict, path) => path.split('.').reduce((o, k) => (o == null ? o : o[k]), dict);
+      let activeLang = 'en';
+      function applyLang(lang) {
+        activeLang = lang;
+        const dict = i18n[lang] || i18n.en;
+        document.querySelectorAll('[data-i18n]').forEach((el) => {
+          const v = resolve(dict, el.getAttribute('data-i18n'));
+          if (typeof v === 'string') el.textContent = v;
+        });
+        // HTML-bearing strings (e.g. the subtitle's <strong> emphasis): innerHTML.
+        document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+          const v = resolve(dict, el.getAttribute('data-i18n-html'));
+          if (typeof v === 'string') el.innerHTML = v;
+        });
+        html.setAttribute('lang', lang);
+        document.querySelectorAll('[data-lang-btn]').forEach((b) => {
+          b.setAttribute('aria-pressed', String(b.getAttribute('data-lang-btn') === lang));
+        });
+        try { localStorage.setItem('pk-lang', lang); } catch (e) {}
+      }
+      let savedLang = null;
+      try { savedLang = localStorage.getItem('pk-lang'); } catch (e) {}
+      applyLang(savedLang && i18n[savedLang] ? savedLang : 'en');
+      document.querySelectorAll('[data-lang-btn]').forEach((b) => {
+        b.addEventListener('click', () => applyLang(b.getAttribute('data-lang-btn')));
+      });
+      // The 3D service labels (drei <Html>) mount after this initial applyLang —
+      // re-apply the active language to those late [data-i18n] nodes.
+      window.addEventListener('pk-relabel', () => applyLang(activeLang));
+
+      // ---- intro orchestrator ------------------------------------------------
+      function release(mode) {
+        if (!window.__pkHero) window.__pkHero = { mode };
+        window.__pkHero.mode = mode;
+        if (window.__pkHero.notify) window.__pkHero.notify(mode); // wake the scene island
+      }
+
+      // Plays on EVERY load (the pre-paint script set intro-1 unless reduced-motion).
+      if (html.getAttribute('data-hero') === 'intro-1') {
+        const timers = [];
+        let done = false;
+        // NB: no 'scroll' here — the programmatic scroll-to-top must not count as a skip.
+        const skipEvents = ['wheel', 'touchstart', 'pointerdown', 'keydown'];
+        function cleanup() { skipEvents.forEach((e) => window.removeEventListener(e, onSkip)); }
+        function finish(instant) {
+          if (done) return; done = true;
+          timers.forEach(clearTimeout);
+          cleanup();
+          html.setAttribute('data-hero', 'rest');
+          release(instant ? 'instant' : 'build');
+        }
+        function onSkip() { finish(true); } // skip → jump straight to the built rest state
+        // Pacing: headline ~1s hold (short line) → subtitle ~3.3s hold (2
+        // sentences) → STEP 3: a centred "From Phuket" blooms in AND the scene is
+        // released to build at the same moment; the centred chip then cross-fades
+        // out over the build (CSS chipBloom, ~3.2s), ending on the scene alone;
+        // finally the resting layout settles in.
+        timers.push(setTimeout(() => { if (!done) html.setAttribute('data-hero', 'intro-2'); }, 1900));
+        timers.push(setTimeout(() => {
+          if (done) return;
+          html.setAttribute('data-hero', 'intro-3'); // centred "From Phuket"
+          release('build'); // scene starts building behind it, same moment
+        }, 6200));
+        timers.push(setTimeout(() => finish(false), 9400)); // ~build duration later → rest layout
+        skipEvents.forEach((e) => window.addEventListener(e, onSkip, { passive: true, once: true }));
+      }
+
+      // ---- CTA + scroll cue: smooth-scroll to #services ----------------------
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const target = document.getElementById('services');
+      document.querySelectorAll('[data-cta]').forEach((el) => {
+        el.addEventListener('click', () => target?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }));
+      });
+    </script>
+
+    <style is:global>
+      :root {
+        --ink: #1c2b26;
+        --coral: #ff6b4a;
+        --teal: #15a8ae;
+        --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --font-body: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --ease: cubic-bezier(0.22, 1, 0.36, 1); /* calm, premium ease-out */
+      }
+      html, body { margin: 0; padding: 0; background: #fbfcfd; color: var(--ink); font-family: var(--font-body); }
+      * { box-sizing: border-box; }
+
+      /* ---- HERO shell ---- */
+      .hero { position: relative; width: 100%; height: 100vh; height: 100svh; overflow: hidden; }
+      .hero-dawn, .hero-canvas, .hero-scrim, .hero-overlay, .intro { position: absolute; inset: 0; }
+      .hero-dawn {
+        z-index: 0;
+        background:
+          radial-gradient(60% 50% at 39% 27%, #ffdca6 0%, rgba(255, 220, 166, 0) 60%),
+          linear-gradient(180deg, #fbfcfd 0%, #fbfcfd 45%, #ffe6c2 100%);
+      }
+      .hero-canvas { z-index: 1; }
+      .hero-canvas > * { width: 100%; height: 100%; }
+      /* Legibility scrim removed (v51): the text reads fine on the pale scene via
+         its own text-shadow / chip pill, and the veil looked like a whitish patch. */
+      .hero-scrim { z-index: 2; pointer-events: none; background: none; }
+
+      /* ---- INTRO (big centred, staged, premium) ---- */
+      .intro {
+        z-index: 4; display: grid; place-items: center; text-align: center; padding: 1.75rem;
+        pointer-events: none;
+        /* a calm, controlled veil so the text is the clear focus over the held scene */
+        background: radial-gradient(70% 50% at 50% 47%, rgba(255, 253, 248, 0.62) 0%, rgba(255, 253, 248, 0.18) 45%, rgba(255, 253, 248, 0) 78%);
+        transition: opacity 0.8s var(--ease);
+      }
+      /* soft rise + fade + blur entrance; drifts gently up + blurs out on exit */
+      .intro-line {
+        position: absolute; margin: 0; max-width: 20rem;
+        opacity: 0; transform: translateY(22px); filter: blur(7px);
+        transition: opacity 0.95s var(--ease), transform 1.05s var(--ease), filter 0.95s var(--ease);
+        text-shadow: 0 1px 16px rgba(255, 255, 255, 0.65);
+      }
+      .intro-headline {
+        font-family: var(--font-display); font-weight: 600; font-size: clamp(2.5rem, 11vw, 4.8rem);
+        line-height: 1.04; letter-spacing: -0.015em; color: var(--ink);
+      }
+      .intro-subtitle {
+        font-family: var(--font-body); font-weight: 400; font-size: clamp(1.08rem, 4.5vw, 1.5rem);
+        line-height: 1.55; letter-spacing: 0.002em; color: #2c3e36; max-width: 22rem;
+      }
+      .intro-subtitle strong { font-weight: 600; color: var(--ink); } /* emphasise only the catchy phrases */
+      /* centred "From Phuket" — a brand stamp during the scene bloom */
+      .intro-chip {
+        font-family: var(--font-body); font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em;
+        font-size: clamp(0.95rem, 4vw, 1.35rem); color: var(--ink);
+        display: inline-flex; align-items: center; gap: 0.6rem;
+      }
+      .intro-chip::before { content: ''; width: 0.5rem; height: 0.5rem; border-radius: 999px; background: var(--coral); }
+      @media (min-width: 768px) {
+        .intro-headline { max-width: 46rem; }
+        .intro-subtitle { max-width: 40rem; }
+      }
+
+      /* enter (current step) */
+      html[data-hero='intro-1'] .intro-headline,
+      html[data-hero='intro-2'] .intro-subtitle { opacity: 1; transform: none; filter: blur(0); }
+      /* exit (past steps): drift up + blur out, never a flat cut */
+      html[data-hero='intro-2'] .intro-headline,
+      html[data-hero='intro-3'] .intro-headline,
+      html[data-hero='rest'] .intro-headline,
+      html[data-hero='intro-3'] .intro-subtitle,
+      html[data-hero='rest'] .intro-subtitle { opacity: 0; transform: translateY(-16px); filter: blur(6px); }
+      /* STEP 3: centred "From Phuket" blooms in WITH the scene, holds, then
+         cross-fades out over the build (~3.2s) — ends on the scene alone. */
+      @keyframes chipBloom {
+        0%   { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+        20%  { opacity: 1; transform: none; filter: blur(0); }
+        55%  { opacity: 1; transform: none; filter: blur(0); }
+        100% { opacity: 0; transform: translateY(-12px); filter: blur(5px); }
+      }
+      html[data-hero='intro-3'] .intro-chip { animation: chipBloom 3.2s var(--ease) forwards; }
+      html[data-hero='rest'] .intro { opacity: 0; }
+
+      /* ---- REST overlay ---- */
+      .hero-overlay {
+        z-index: 3; display: flex; flex-direction: column;
+        padding: max(1.1rem, env(safe-area-inset-top)) 1.25rem max(1.4rem, env(safe-area-inset-bottom));
+        /* v52: let taps fall through to the 3D objects; re-enable on real controls */
+        pointer-events: none;
+      }
+      .lang, .cta, .scroll-cue { pointer-events: auto; }
+      /* Each piece animates individually so the CHIP arrives WITH the scene bloom,
+         then the rest (headline / CTA / switcher) settles in just after. */
+      .chip, .lang, .headline-compact, .hero-foot {
+        opacity: 0; transform: translateY(10px);
+        transition: opacity 0.9s var(--ease), transform 0.9s var(--ease);
+      }
+      /* CHIP — in sync with the scene reveal (same moment) */
+      html[data-hero='rest'] .chip { opacity: 1; transform: none; transition-delay: 0.1s; }
+      /* the rest of the resting UI — settles in shortly after */
+      html[data-hero='rest'] .lang,
+      html[data-hero='rest'] .headline-compact,
+      html[data-hero='rest'] .hero-foot { opacity: 1; transform: none; transition-delay: 0.85s; }
+
+      .hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+      .chip {
+        display: inline-flex; align-items: center; gap: 0.45rem;
+        font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink);
+        background: rgba(255, 255, 255, 0.62); backdrop-filter: blur(6px);
+        border: 1px solid rgba(21, 168, 174, 0.4); padding: 0.32rem 0.7rem; border-radius: 999px;
+      }
+      .chip::before { content: ''; width: 0.42rem; height: 0.42rem; border-radius: 999px; background: var(--coral); }
+
+      .lang { display: inline-flex; gap: 0.15rem; background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(6px); border: 1px solid rgba(28, 43, 38, 0.12); border-radius: 999px; padding: 0.15rem; }
+      .lang-btn { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; color: #5b6b64; background: transparent; border: 0; border-radius: 999px; padding: 0.28rem 0.55rem; cursor: pointer; transition: background 0.18s, color 0.18s; }
+      .lang-btn[aria-pressed='true'] { background: var(--ink); color: #fff; }
+
+      .headline-compact {
+        font-family: var(--font-display); font-weight: 600; margin: 0.8rem 0 0; max-width: 17rem;
+        font-size: clamp(1.45rem, 6.5vw, 2.1rem); line-height: 1.05; letter-spacing: -0.01em; color: var(--ink);
+        text-shadow: 0 1px 8px rgba(255, 255, 255, 0.6);
+      }
+
+      .hero-foot { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 0.85rem; }
+      .cta {
+        font-family: var(--font-body); font-weight: 600; font-size: 1.02rem; color: var(--ink);
+        background: var(--coral); border: 0; border-radius: 999px; padding: 0.85rem 1.6rem; cursor: pointer;
+        box-shadow: 0 10px 24px -10px rgba(255, 107, 74, 0.7); transition: transform 0.18s, box-shadow 0.18s;
+      }
+      .cta:hover { transform: translateY(-2px); box-shadow: 0 16px 30px -12px rgba(255, 107, 74, 0.8); }
+      .cta:active { transform: translateY(0); }
+      .scroll-cue { align-self: center; width: 2.2rem; height: 2.2rem; background: transparent; border: 0; cursor: pointer; display: grid; place-items: center; }
+      .chev { width: 0.8rem; height: 0.8rem; border-right: 2px solid #5b6b64; border-bottom: 2px solid #5b6b64; transform: rotate(45deg); animation: cue 1.8s ease-in-out infinite; }
+      @keyframes cue { 0%, 100% { transform: rotate(45deg) translate(0, 0); opacity: 0.5; } 50% { transform: rotate(45deg) translate(2px, 2px); opacity: 1; } }
+
+      @media (prefers-reduced-motion: reduce) {
+        .intro-line, .intro, .hero-overlay,
+        .chip, .lang, .headline-compact, .hero-foot { transition: none; }
+        .chev, .intro-chip { animation: none; }
+      }
+
+      /* ---- DESKTOP: text in the upper-left band, scene full-bleed ---- */
+      @media (min-width: 768px) {
+        .hero-overlay { padding: 2rem 3rem; }
+        .headline-compact { margin-top: 12vh; font-size: clamp(1.9rem, 3vw, 2.8rem); max-width: 22rem; }
+        .hero-foot { margin-top: 1.8rem; flex-direction: row; align-items: center; gap: 1.4rem; }
+        .scroll-cue { position: absolute; left: 50%; bottom: 1.5rem; transform: translateX(-50%); align-self: auto; }
+        /* desktop scrim also removed (v51) — no left/diagonal white patch */
+      }
+
+      /* ---- SERVICES ---- */
+      .services { background: #fbfcfd; padding: clamp(3rem, 8vw, 6rem) 1.25rem clamp(4rem, 10vw, 7rem); }
+      .services-inner { max-width: 64rem; margin: 0 auto; }
+      .services-title { font-family: var(--font-display); font-weight: 600; font-size: clamp(1.6rem, 5vw, 2.4rem); margin: 0 0 1.8rem; color: var(--ink); }
+      .cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 0.9rem; }
+      @media (min-width: 560px) { .cards { grid-template-columns: 1fr 1fr; } }
+      @media (min-width: 960px) { .cards { grid-template-columns: repeat(4, 1fr); } }
+      .card { position: relative; background: #fff; border: 1px solid rgba(28, 43, 38, 0.1); border-radius: 1rem; padding: 1.3rem 1.2rem 1.4rem; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; }
+      .card:hover { transform: translateY(-3px); box-shadow: 0 18px 36px -22px rgba(28, 43, 38, 0.5); border-color: rgba(21, 168, 174, 0.5); }
+      .card-num { font-family: var(--font-display); font-size: 0.85rem; font-weight: 600; color: var(--teal); }
+      .card-name { font-family: var(--font-display); font-weight: 600; font-size: 1.2rem; margin: 0.5rem 0 0.35rem; color: var(--ink); }
+      .card-desc { margin: 0; font-size: 0.95rem; line-height: 1.45; color: #5b6b64; }
+
+      /* ---- 3D service label pins (drei <Html> content) ---- */
+      /* bottom-centre of the pin sits on the object anchor: dot at the object, pill above.
+         Hidden during the intro; fade in with the final scene (html[data-hero='rest']). */
+      .svc-pin {
+        transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center;
+        pointer-events: none; user-select: none; opacity: 0; transition: opacity 0.7s var(--ease) 0.2s;
+      }
+      html[data-hero='rest'] .svc-pin { opacity: 1; }
+      html[data-hero='rest'] .svc-pill { pointer-events: auto; }
+      .svc-pill {
+        pointer-events: none; cursor: pointer; white-space: nowrap;
+        font: 600 0.72rem/1 var(--font-body); letter-spacing: 0.01em; color: var(--ink);
+        background: rgba(255, 255, 255, 0.5); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
+        border: 1px solid rgba(21, 168, 174, 0.35); border-radius: 999px; padding: 0.3rem 0.62rem;
+        box-shadow: 0 3px 10px -5px rgba(28, 43, 38, 0.4);
+        opacity: 0.74; transition: opacity 0.2s var(--ease), transform 0.2s var(--ease), border-color 0.2s, background 0.2s, box-shadow 0.2s;
+      }
+      .svc-stem { width: 1.5px; height: 11px; background: linear-gradient(rgba(95, 227, 214, 0.75), rgba(95, 227, 214, 0.25)); }
+      .svc-anchor-dot { width: 7px; height: 7px; border-radius: 999px; background: #5fe3d6; box-shadow: 0 0 7px rgba(95, 227, 214, 0.9); margin-top: -1px; }
+      .svc-pin.is-active .svc-pill { opacity: 1; transform: scale(1.07); border-color: #5fe3d6; background: rgba(255, 255, 255, 0.85); box-shadow: 0 5px 16px -5px rgba(95, 227, 214, 0.7); }
+      .svc-pin.is-active .svc-anchor-dot { box-shadow: 0 0 12px rgba(95, 227, 214, 1); }
+      @media (min-width: 768px) { .svc-pill { font-size: 0.78rem; } }
+
+      .versions-link { position: fixed; bottom: 0.6rem; right: 0.6rem; z-index: 50; font-size: 0.72rem; color: #5b6b64; text-decoration: none; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 0.5rem; padding: 0.3rem 0.55rem; }
+    </style>
+  </body>
+</html>
