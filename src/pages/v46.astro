@@ -1,0 +1,244 @@
+---
+// Voxel v46 — HERO layout (copied from v45's validated scene). Overlays the brand
+// message + CTA on the full-bleed 3D voxel scene and adds a #services section
+// below (scroll target). MOBILE-FIRST: the scene is reframed so the palm
+// dominates a portrait screen (see CameraRig in components/v46), text sits in the
+// upper third over a soft legibility scrim, the CTA sits in the bottom thumb-zone.
+// LAYOUT ONLY — no 3D click-interactivity yet. All copy is externalised to
+// src/i18n/*.json (EN default; FR/TH stubs = EN); a tiny vanilla switcher swaps
+// [data-i18n] text client-side so first paint is instant and strings aren't
+// hardcoded in components. The scene (palette, elements, animations, paused
+// rotation) is exactly as validated.
+import '../styles/global.css';
+import PalmTreeHero from '../components/v46/PalmTreeHero.tsx';
+import en from '../i18n/en.json';
+import fr from '../i18n/fr.json';
+import th from '../i18n/th.json';
+
+const i18n = { en, fr, th };
+const t = en; // server-render the EN copy for instant first paint
+
+// Precompute typed lists here (keeps generics out of the template, where the
+// Astro/esbuild parser chokes on inline casts).
+type Svc = { name: string; desc: string };
+const langs = ['en', 'fr', 'th'] as const;
+const svcKeys = ['websites', 'ai', 'seo', 'growth'] as const;
+const services = (t.services as Record<string, Svc>);
+const svc = svcKeys.map((key, i) => ({ key, num: String(i + 1).padStart(2, '0'), ...services[key] }));
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Palmkit Studio — Faster. Further. For less.</title>
+    <meta name="description" content="A web & AI studio from Phuket. Faster, further, for less — websites, growth & automation." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- ===================== HERO ===================== -->
+    <section class="hero">
+      <!-- first-paint dawn backdrop (shows instantly behind the canvas while it hydrates) -->
+      <div class="hero-dawn" aria-hidden="true"></div>
+      <!-- the validated 3D voxel scene, full-bleed -->
+      <div class="hero-canvas">
+        <PalmTreeHero client:only="react" />
+      </div>
+      <!-- soft legibility scrim over the upper area (keeps text crisp, scene still visible) -->
+      <div class="hero-scrim" aria-hidden="true"></div>
+
+      <!-- overlay content -->
+      <div class="hero-overlay">
+        <header class="hero-top">
+          <span class="chip rise" style="--d:0.15s" data-i18n="chip">{t.chip}</span>
+          <nav class="lang" aria-label="Language">
+            {
+              langs.map((code) => (
+                <button
+                  type="button"
+                  class="lang-btn"
+                  data-lang-btn={code}
+                  aria-pressed={code === 'en' ? 'true' : 'false'}
+                >
+                  {i18n[code].langName}
+                </button>
+              ))
+            }
+          </nav>
+        </header>
+
+        <div class="hero-copy">
+          <h1 class="headline rise" style="--d:0.3s" data-i18n="headline">{t.headline}</h1>
+          <p class="subtitle rise" style="--d:0.5s" data-i18n="subtitle">{t.subtitle}</p>
+        </div>
+
+        <div class="hero-foot">
+          <button type="button" class="cta rise" style="--d:0.7s" data-cta data-i18n="cta">{t.cta}</button>
+          <button type="button" class="scroll-cue" data-cta aria-label={t.scrollCue}>
+            <span class="chev" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SERVICES ===================== -->
+    <section id="services" class="services">
+      <div class="services-inner">
+        <h2 class="services-title" data-i18n="servicesTitle">{t.servicesTitle}</h2>
+        <ul class="cards">
+          {
+            svc.map((s) => (
+              <li class="card">
+                <span class="card-num">{s.num}</span>
+                <h3 class="card-name" data-i18n={`services.${s.key}.name`}>{s.name}</h3>
+                <p class="card-desc" data-i18n={`services.${s.key}.desc`}>{s.desc}</p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </section>
+
+    <a href="/versions" class="versions-link">← All versions</a>
+
+    <script define:vars={{ i18n }}>
+      // ---- i18n switcher: swap [data-i18n] text from the inlined dicts --------
+      const root = document.documentElement;
+      const resolve = (dict, path) => path.split('.').reduce((o, k) => (o == null ? o : o[k]), dict);
+      function applyLang(lang) {
+        const dict = i18n[lang] || i18n.en;
+        document.querySelectorAll('[data-i18n]').forEach((el) => {
+          const v = resolve(dict, el.getAttribute('data-i18n'));
+          if (typeof v === 'string') el.textContent = v;
+        });
+        root.setAttribute('data-lang', lang);
+        document.querySelectorAll('[data-lang-btn]').forEach((b) => {
+          b.setAttribute('aria-pressed', String(b.getAttribute('data-lang-btn') === lang));
+        });
+        try { localStorage.setItem('pk-lang', lang); } catch (e) {}
+      }
+      let saved = null;
+      try { saved = localStorage.getItem('pk-lang'); } catch (e) {}
+      applyLang(saved && i18n[saved] ? saved : 'en');
+      document.querySelectorAll('[data-lang-btn]').forEach((b) => {
+        b.addEventListener('click', () => applyLang(b.getAttribute('data-lang-btn')));
+      });
+
+      // ---- CTA + scroll cue: smooth-scroll to #services ----------------------
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const target = document.getElementById('services');
+      document.querySelectorAll('[data-cta]').forEach((el) => {
+        el.addEventListener('click', () => {
+          target?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+        });
+      });
+    </script>
+
+    <style is:global>
+      :root {
+        --ink: #1c2b26;
+        --coral: #ff6b4a;
+        --teal: #15a8ae;
+        --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --font-body: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      html, body { margin: 0; padding: 0; background: #fbfcfd; color: var(--ink); font-family: var(--font-body); }
+      * { box-sizing: border-box; }
+
+      /* ---- HERO ---- */
+      .hero { position: relative; width: 100%; height: 100vh; height: 100svh; overflow: hidden; }
+      .hero-dawn, .hero-canvas, .hero-scrim, .hero-overlay { position: absolute; inset: 0; }
+      .hero-dawn {
+        z-index: 0;
+        background:
+          radial-gradient(60% 50% at 39% 27%, #ffdca6 0%, rgba(255, 220, 166, 0) 60%),
+          linear-gradient(180deg, #fbfcfd 0%, #fbfcfd 45%, #ffe6c2 100%);
+      }
+      .hero-canvas { z-index: 1; }
+      .hero-canvas > * { width: 100%; height: 100%; }
+      .hero-scrim {
+        z-index: 2; pointer-events: none;
+        background: linear-gradient(180deg, rgba(255, 253, 248, 0.82) 0%, rgba(255, 253, 248, 0.55) 28%, rgba(255, 253, 248, 0) 56%);
+      }
+      .hero-overlay {
+        z-index: 3; display: flex; flex-direction: column;
+        padding: max(1.1rem, env(safe-area-inset-top)) 1.25rem max(1.4rem, env(safe-area-inset-bottom));
+      }
+      .hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+      .chip {
+        display: inline-flex; align-items: center; gap: 0.45rem;
+        font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink);
+        background: rgba(255, 255, 255, 0.62); backdrop-filter: blur(6px);
+        border: 1px solid rgba(21, 168, 174, 0.4); padding: 0.32rem 0.7rem; border-radius: 999px;
+      }
+      .chip::before { content: ''; width: 0.42rem; height: 0.42rem; border-radius: 999px; background: var(--coral); }
+
+      .lang { display: inline-flex; gap: 0.15rem; background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(6px); border: 1px solid rgba(28, 43, 38, 0.12); border-radius: 999px; padding: 0.15rem; }
+      .lang-btn {
+        font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; color: #5b6b64;
+        background: transparent; border: 0; border-radius: 999px; padding: 0.28rem 0.55rem; cursor: pointer; transition: background 0.18s, color 0.18s;
+      }
+      .lang-btn[aria-pressed='true'] { background: var(--ink); color: #fff; }
+
+      .hero-copy { margin-top: 1.5rem; max-width: 34rem; }
+      .headline {
+        font-family: var(--font-display); font-weight: 600;
+        font-size: clamp(2.1rem, 9.5vw, 3.6rem); line-height: 1.02; letter-spacing: -0.01em;
+        margin: 0; color: var(--ink); text-shadow: 0 1px 10px rgba(255, 255, 255, 0.5);
+      }
+      .subtitle {
+        margin: 0.9rem 0 0; max-width: 30rem; font-size: clamp(0.95rem, 4vw, 1.08rem); line-height: 1.5; font-weight: 400;
+        color: #2c3e36; text-shadow: 0 1px 6px rgba(255, 255, 255, 0.55);
+      }
+
+      .hero-foot { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 0.85rem; }
+      .cta {
+        font-family: var(--font-body); font-weight: 600; font-size: 1.02rem; color: var(--ink);
+        background: var(--coral); border: 0; border-radius: 999px; padding: 0.85rem 1.6rem; cursor: pointer;
+        box-shadow: 0 10px 24px -10px rgba(255, 107, 74, 0.7); transition: transform 0.18s, box-shadow 0.18s;
+      }
+      .cta:hover { transform: translateY(-2px); box-shadow: 0 16px 30px -12px rgba(255, 107, 74, 0.8); }
+      .cta:active { transform: translateY(0); }
+
+      .scroll-cue { align-self: center; margin-top: 0.1rem; width: 2.2rem; height: 2.2rem; background: transparent; border: 0; cursor: pointer; display: grid; place-items: center; }
+      .chev { width: 0.8rem; height: 0.8rem; border-right: 2px solid #5b6b64; border-bottom: 2px solid #5b6b64; transform: rotate(45deg); animation: cue 1.8s ease-in-out infinite; }
+
+      /* ---- entrance ---- */
+      .rise { opacity: 0; transform: translateY(14px); animation: rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; animation-delay: var(--d, 0s); }
+      @keyframes rise { to { opacity: 1; transform: none; } }
+      @keyframes cue { 0%, 100% { transform: rotate(45deg) translate(0, 0); opacity: 0.5; } 50% { transform: rotate(45deg) translate(2px, 2px); opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .rise { opacity: 1; transform: none; animation: none; } .chev { animation: none; } }
+
+      /* ---- DESKTOP: full-bleed scene, copy tastefully to the LEFT, CTA inline ---- */
+      @media (min-width: 768px) {
+        .hero-overlay { padding: 2rem 3rem; }
+        .hero-copy { margin-top: 14vh; }
+        .headline { font-size: clamp(3rem, 5vw, 4.6rem); }
+        .hero-foot { margin-top: 1.8rem; flex-direction: row; align-items: center; gap: 1.4rem; }
+        .scroll-cue { position: absolute; left: 50%; bottom: 1.5rem; transform: translateX(-50%); align-self: auto; margin: 0; }
+        .hero-scrim { background: linear-gradient(100deg, rgba(255, 253, 248, 0.82) 0%, rgba(255, 253, 248, 0.45) 32%, rgba(255, 253, 248, 0) 58%); }
+      }
+
+      /* ---- SERVICES ---- */
+      .services { background: #fbfcfd; padding: clamp(3rem, 8vw, 6rem) 1.25rem clamp(4rem, 10vw, 7rem); }
+      .services-inner { max-width: 64rem; margin: 0 auto; }
+      .services-title { font-family: var(--font-display); font-weight: 600; font-size: clamp(1.6rem, 5vw, 2.4rem); margin: 0 0 1.8rem; color: var(--ink); }
+      .cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 0.9rem; }
+      @media (min-width: 560px) { .cards { grid-template-columns: 1fr 1fr; } }
+      @media (min-width: 960px) { .cards { grid-template-columns: repeat(4, 1fr); } }
+      .card { position: relative; background: #fff; border: 1px solid rgba(28, 43, 38, 0.1); border-radius: 1rem; padding: 1.3rem 1.2rem 1.4rem; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; }
+      .card:hover { transform: translateY(-3px); box-shadow: 0 18px 36px -22px rgba(28, 43, 38, 0.5); border-color: rgba(21, 168, 174, 0.5); }
+      .card-num { font-family: var(--font-display); font-size: 0.85rem; font-weight: 600; color: var(--teal); }
+      .card-name { font-family: var(--font-display); font-weight: 600; font-size: 1.2rem; margin: 0.5rem 0 0.35rem; color: var(--ink); }
+      .card-desc { margin: 0; font-size: 0.95rem; line-height: 1.45; color: #5b6b64; }
+
+      .versions-link { position: fixed; bottom: 0.6rem; right: 0.6rem; z-index: 50; font-size: 0.72rem; color: #5b6b64; text-decoration: none; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 0.5rem; padding: 0.3rem 0.55rem; }
+    </style>
+  </body>
+</html>

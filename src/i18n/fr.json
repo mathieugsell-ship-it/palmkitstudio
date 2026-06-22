@@ -1,0 +1,16 @@
+{
+  "langName": "FR",
+  "_note": "FR placeholders = EN for now; to be translated + reviewed later.",
+  "chip": "From Phuket",
+  "headline": "Faster. Further. For less.",
+  "subtitle": "AI lets us do more, for less — the reach of a big agency, without the big-agency budget. Websites, growth & automation, from Phuket.",
+  "cta": "See our offers",
+  "scrollCue": "Explore",
+  "servicesTitle": "Our services",
+  "services": {
+    "websites": { "name": "Websites", "desc": "Fast, modern sites that convert." },
+    "ai": { "name": "AI Automation", "desc": "Smart workflows that save you time." },
+    "seo": { "name": "Local SEO", "desc": "Get found by customers nearby." },
+    "growth": { "name": "Growth", "desc": "Bring in waves of new visitors." }
+  }
+}
