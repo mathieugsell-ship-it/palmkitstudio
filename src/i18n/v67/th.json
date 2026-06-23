@@ -1,0 +1,23 @@
+{
+  "langName": "TH",
+  "_note": "TH placeholders = EN for now; to be translated + reviewed later.",
+  "chip": "From Phuket",
+  "headline": "Faster. Further. For less.",
+  "subtitle": "AI lets us <strong>do more, for less</strong>. The reach of a big agency, <strong>without the big-agency budget</strong>. Websites, growth &amp; automation, from Phuket.",
+  "cta": "See our offers",
+  "scrollCue": "Explore",
+  "servicesTitle": "Our services",
+  "focus": {
+    "back": "Back",
+    "websites": {
+      "tagline": "Your website is a palm tree.",
+      "body": "Plant it well, and it grows. Roots that hold, a presence that rises above the noise. We build sites that thrive: fast, beautiful, easy to find. Around it, an ecosystem takes shape. Visitors arrive, explore, and become customers. Let your presence grow, and let it work for you, day and night."
+    }
+  },
+  "services": {
+    "websites": { "name": "Websites", "desc": "Fast, modern sites that convert." },
+    "ai": { "name": "AI Automation", "desc": "Smart workflows that save you time." },
+    "seo": { "name": "Local SEO", "desc": "Get found by customers nearby." },
+    "growth": { "name": "Growth", "desc": "Bring in waves of new visitors." }
+  }
+}
